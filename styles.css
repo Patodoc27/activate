@@ -33,24 +33,19 @@ a{color:var(--rojo)}
     radial-gradient(900px 600px at 85% -200px, rgba(255,255,255,.14), transparent),
     radial-gradient(700px 500px at -150px 110%, rgba(0,0,0,.18), transparent),
     linear-gradient(150deg,#b03a3a 0%,var(--rojo) 45%,var(--rojo-osc) 100%);
-  color:#fbf3ea;padding:38px 26px 86px;position:relative;overflow:hidden;
+  color:#fbf3ea;padding:44px 26px 80px;position:relative;overflow:hidden;
 }
 .login-hero::before{content:'';position:absolute;top:-140px;right:-120px;width:340px;height:340px;
   border:1.5px solid rgba(255,255,255,.14);border-radius:50%}
 .login-hero::after{content:'';position:absolute;top:-100px;right:-80px;width:340px;height:340px;
   border:1.5px solid rgba(255,255,255,.09);border-radius:50%}
 .login-hero .marca-row{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
-.login-hero .escudo-img{width:84px;height:84px;border-radius:50%;flex:none;
+.login-hero .marca-col{display:flex;flex-direction:column;justify-content:center}
+.login-hero .escudo-img{width:96px;height:96px;border-radius:50%;flex:none;
   box-shadow:0 8px 28px rgba(0,0,0,.32),0 0 0 7px rgba(255,255,255,.12),0 0 0 14px rgba(255,255,255,.05)}
-.login-hero h1{font-size:2.5rem;letter-spacing:.01em;margin:0;position:relative;z-index:1}
-.login-hero .escuela{font-size:.82rem;opacity:.85;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-top:16px;position:relative;z-index:1}
-.login-hero .escuela::after{content:'';display:block;width:42px;height:2px;background:rgba(255,255,255,.55);margin-top:10px;border-radius:2px}
-.login-hero .tagline{font-size:.92rem;opacity:.88;margin-top:14px;max-width:360px;line-height:1.5;position:relative;z-index:1}
-.login-feats{display:flex;flex-direction:column;gap:10px;margin-top:22px;position:relative;z-index:1}
-.login-feats .feat{display:flex;align-items:center;gap:12px;font-size:.86rem;font-weight:600;
-  background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);
-  padding:11px 15px;border-radius:14px;backdrop-filter:blur(2px)}
-.login-feats .feat svg{width:17px;height:17px;flex:none;opacity:.95}
+.login-hero .escuela{font-size:.72rem;opacity:.85;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;white-space:nowrap}
+.login-hero h1{font-size:2.6rem;letter-spacing:.01em;line-height:1;margin:0}
+.login-hero .tagline{font-size:.95rem;opacity:.88;margin-top:18px;position:relative;z-index:1}
 .login-body{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:0 20px 44px;background:var(--crema)}
 .login-card{width:100%;max-width:430px;background:var(--papel);border:1px solid var(--linea);
   border-radius:20px;box-shadow:var(--sombra-alta);padding:30px 26px;margin-top:-64px;position:relative}
@@ -60,10 +55,11 @@ a{color:var(--rojo)}
   .login-wrap{flex-direction:row}
   .login-hero{flex:1.05;display:flex;flex-direction:column;justify-content:center;
     padding:56px 60px;min-height:100vh}
-  .login-hero .marca-row{gap:26px}
-  .login-hero .escudo-img{width:130px;height:130px}
-  .login-hero h1{font-size:3rem}
-  .login-feats .feat{font-size:.92rem;padding:13px 18px}
+  .login-hero .marca-row{gap:28px}
+  .login-hero .escudo-img{width:140px;height:140px}
+  .login-hero .escuela{font-size:.82rem;white-space:normal}
+  .login-hero h1{font-size:3.1rem}
+  .login-hero .tagline{font-size:1.05rem;margin-top:24px}
   .login-body{flex:1;align-items:center;padding:40px}
   .login-card{margin-top:0;max-width:460px}
 }

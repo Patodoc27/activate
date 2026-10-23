@@ -86,14 +86,10 @@
     app.innerHTML =
       '<div class="login-wrap">'
       + '<div class="login-hero"><div class="marca-row">' + escudoIMG
-      + '<h1>' + esc(cfg.APP_NAME) + '</h1></div>'
-      + '<div class="escuela">' + esc(cfg.SCHOOL_NAME) + '</div>'
-      + '<div class="tagline">Las notas del colegio, al día. Docentes cargan, familias y estudiantes miran — todo en el mismo lugar.</div>'
-      + '<div class="login-feats">'
-      + '<span class="feat">' + icon('lapiz') + 'El docente carga actividad, plazo y nota</span>'
-      + '<span class="feat">' + icon('ojo') + 'Las familias ven sus hijos al instante</span>'
-      + '<span class="feat">' + icon('calendario') + 'Los estudiantes siguen sus entregas</span>'
-      + '</div></div>'
+      + '<div class="marca-col"><div class="escuela">' + esc(cfg.SCHOOL_NAME) + '</div>'
+      + '<h1>' + esc(cfg.APP_NAME) + '</h1></div></div>'
+      + '<div class="tagline">Las notas del colegio, al día.</div>'
+      + '</div>'
       + '<div class="login-body"><div class="login-card">'
       + '<h2>Entrar</h2><div class="sub-login">Con tu cuenta del colegio</div>'
       + '<div id="login-err"></div>'
