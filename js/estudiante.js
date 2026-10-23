@@ -52,30 +52,35 @@ window.Views.estudiante = function (view, ctx) {
     var html = '<div class="seccion-titulo"><h2>Hola, ' + esc(state.me.first_name) + '</h2>'
       + '<span class="nota">' + esc(state.me.courses ? state.me.courses.name : '') + '</span></div>';
 
-    html += '<h3 style="margin:14px 0 10px">Próximas entregas</h3>';
-    if (!prox.length) html += '<div class="vacio">Nada por vencer. Bien ahí.</div>';
+    html += '<div class="stats">'
+      + '<div class="stat' + (prox.length ? '' : '') + '"><div class="n">' + prox.length + '</div><div class="l">por entregar</div></div>'
+      + '<div class="stat' + (vencidas.length ? ' alerta' : '') + '"><div class="n">' + vencidas.length + '</div><div class="l">vencidas</div></div>'
+      + '<div class="stat"><div class="n">' + calif.length + '</div><div class="l">calificadas</div></div></div>';
+
+    html += '<h3 class="subt">Próximas entregas</h3>';
+    if (!prox.length) html += '<div class="vacio">' + A.icon('tilde') + 'Nada por vencer. Bien ahí.</div>';
     prox.forEach(function (a) {
       var f = a.due_date.split('-');
       var cl = a.due_date === hoy ? ' entrega hoy' : '';
       html += '<div class="entrega' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])
         + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
-        + '</div></div><div><div class="materia-tag">' + esc(mname[a.subject_id] || '')
+        + '</div></div><div class="info"><div class="materia-tag">' + esc(mname[a.subject_id] || '')
         + '</div><div class="tit">' + esc(a.title) + '</div>'
-        + (a.description ? '<div class="meta" style="color:#6f665f;font-size:.8rem">' + esc(a.description) + '</div>' : '')
-        + '</div><span class="est badge-estado b-pend">' + (a.due_date === hoy ? 'HOY' : A.fmtFecha(a.due_date).split(' de ')[0]) + '</span></div>';
+        + (a.description ? '<div class="meta">' + esc(a.description) + '</div>' : '')
+        + '</div>' + A.chipDias(a.due_date) + '</div>';
     });
 
     if (vencidas.length) {
-      html += '<h3 style="margin:20px 0 10px">Pasaron sin calificar</h3>';
+      html += '<h3 class="subt">Pasaron sin calificar</h3>';
       vencidas.forEach(function (a) {
-        html += '<div class="entrega vencida"><div><div class="materia-tag">' + esc(mname[a.subject_id] || '')
+        html += '<div class="entrega vencida"><div class="info"><div class="materia-tag">' + esc(mname[a.subject_id] || '')
           + '</div><div class="tit">' + esc(a.title) + '</div></div>'
-          + '<span class="est badge-estado b-nopres">venció ' + A.fmtFecha(a.due_date).split(' de ')[0] + '</span></div>';
+          + '<span class="est badge-estado b-nopres">venció ' + A.textoDias(a.due_date) + '</span></div>';
       });
     }
 
-    html += '<h3 style="margin:20px 0 10px">Mis calificaciones</h3>';
-    if (!calif.length) html += '<div class="vacio">Todavía no hay notas cargadas.</div>';
+    html += '<h3 class="subt">Mis calificaciones</h3>';
+    if (!calif.length) html += '<div class="vacio">' + A.icon('libro') + 'Todavía no hay notas cargadas.</div>';
     else {
       var porMat = {};
       calif.forEach(function (a) { (porMat[a.subject_id] = porMat[a.subject_id] || []).push(a); });

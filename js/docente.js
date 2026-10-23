@@ -2,17 +2,17 @@
 window.Views.docente = function (view, ctx) {
   var sb = A.sb, esc = A.esc, el = A.el;
   var state = { subjects: [], subject: null, terms: [], term: null,
-                activities: [], students: [], grades: {}, finals: {} };
+                activities: [], students: [], grades: {}, finals: {}, sucias: 0 };
 
   function cargar() {
     sb.from('teacher_assignments')
       .select('subject_id, subjects(id,name,short_name)')
       .eq('account_id', ctx.user.id)
       .then(function (r) {
-        if (r.error) { view.innerHTML = '<div class="aviso">No se pudieron cargar tus materias.</div>'; return; }
+        if (r.error) { view.innerHTML = '<div class="aviso">' + A.icon('alerta') + '<div>No se pudieron cargar tus materias.</div></div>'; return; }
         state.subjects = (r.data || []).map(function (x) { return x.subjects; });
         if (!state.subjects.length) {
-          view.innerHTML = '<div class="vacio">Todavía no tenés materias asignadas.<br>Avisá a dirección.</div>';
+          view.innerHTML = '<div class="vacio">' + A.icon('libro') + 'Todavía no tenés materias asignadas.<br>Avisá a dirección.</div>';
           return;
         }
         sb.from('terms').select('id,name,ordinal').order('ordinal', { ascending: false })
@@ -50,13 +50,32 @@ window.Views.docente = function (view, ctx) {
     });
   }
 
+  function actsDelTerm() {
+    return state.activities.filter(function (a) { return a.term_id === state.term; });
+  }
+
   function dibujar() {
+    var acts = actsDelTerm();
+    var sinCalificar = 0;
+    acts.forEach(function (a) {
+      state.students.forEach(function (s) {
+        var g = state.grades[a.id + '_' + s.id];
+        if (!g || g.status === 'sin_calificar') sinCalificar++;
+      });
+    });
+    var materia = state.subjects.filter(function (s) { return s.id === state.subject; })[0] || {};
+
     view.innerHTML =
       '<div class="seccion-titulo"><h2>Mis materias</h2>'
-      + '<span class="nota">Tocá una actividad para ver el plazo; escribí la nota en cada celda</span></div>'
+      + '<span class="nota">Tocá el título de una actividad para editarla o ver su plazo</span></div>'
       + '<div class="pills" id="pills"></div>'
-      + '<div class="toolbar"><div class="pills" id="pillsT" style="margin:0"></div><div class="spacer"></div>'
+      + '<div class="toolbar"><div class="pills grupo" id="pillsT" style="margin:0"></div><div class="spacer"></div>'
       + '<button class="btn btn-mini" id="nueva">+ Nueva actividad</button></div>'
+      + '<div class="stats">'
+      + '<div class="stat"><div class="n">' + state.students.length + '</div><div class="l">estudiantes</div></div>'
+      + '<div class="stat"><div class="n">' + acts.length + '</div><div class="l">actividades del trimestre</div></div>'
+      + '<div class="stat' + (sinCalificar ? ' alerta' : '') + '"><div class="n">' + sinCalificar
+      + '</div><div class="l">celdas sin calificar</div></div></div>'
       + '<div id="tabla"></div>'
       + '<div class="leyenda"><span><b>0</b> = pendiente de entrega</span><span><b>1</b> = no presentado</span>'
       + '<span><b>—</b> = sin calificación</span><span>La nota <b>Final</b> la cargás vos a mano.</span></div>';
@@ -64,7 +83,7 @@ window.Views.docente = function (view, ctx) {
     var pills = view.querySelector('#pills');
     state.subjects.forEach(function (s) {
       var b = el('button', 'pill' + (s.id === state.subject ? ' activa' : ''), s.name);
-      b.addEventListener('click', function () { state.subject = s.id; cargarMateria(); });
+      b.addEventListener('click', function () { state.subject = s.id; state.sucias = 0; cargarMateria(); });
       pills.appendChild(b);
     });
     var pillsT = view.querySelector('#pillsT');
@@ -73,21 +92,20 @@ window.Views.docente = function (view, ctx) {
       b.addEventListener('click', function () { state.term = t.id; dibujar(); });
       pillsT.appendChild(b);
     });
-    view.querySelector('#nueva').addEventListener('click', modalActividad);
+    view.querySelector('#nueva').addEventListener('click', function () { modalActividad(null); });
 
-    var acts = state.activities.filter(function (a) { return a.term_id === state.term; });
     var tabla = view.querySelector('#tabla');
     if (!state.students.length) { tabla.innerHTML = '<div class="vacio">Sin estudiantes en esta materia.</div>'; return; }
     if (!acts.length) {
-      tabla.innerHTML = '<div class="vacio">Todavía no hay actividades en este trimestre.<br>Creá la primera con "+ Nueva actividad".</div>';
+      tabla.innerHTML = '<div class="vacio">' + A.icon('calendario') + 'Todavía no hay actividades en este trimestre.<br>Creá la primera con "+ Nueva actividad".</div>';
       return;
     }
     var html = '<div class="planilla-wrap"><table class="planilla"><thead><tr>'
-      + '<th class="alumno">Estudiante</th>';
+      + '<th class="col-alumno alumno">Estudiante</th>';
     acts.forEach(function (a) {
-      html += '<th class="num" title="' + esc(a.description || '') + '">'
-        + esc(a.title) + '<br><span style="font-weight:400;font-size:.72rem;opacity:.75">'
-        + (a.due_date ? A.fmtFecha(a.due_date) : 'sin plazo') + '</span></th>';
+      html += '<th class="num"><button class="th-act" data-edit="' + a.id + '" title="'
+        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(a.title) + '</span>'
+        + '<span class="t2">' + (a.due_date ? A.fmtFecha(a.due_date) + (A.textoDias(a.due_date) ? ' · ' + A.textoDias(a.due_date) : '') : 'sin plazo') + '</span></button></th>';
     });
     html += '<th class="num">Final</th></tr></thead><tbody>';
     state.students.forEach(function (s) {
@@ -96,62 +114,107 @@ window.Views.docente = function (view, ctx) {
         var g = state.grades[a.id + '_' + s.id];
         var v = g && g.status === 'calificada' ? g.value : '';
         var st = g ? g.status : 'sin_calificar';
-        html += '<td class="num" data-aid="' + a.id + '" data-sid="' + s.id + '">'
-          + '<input class="nota" type="number" min="0" max="10" step="1" value="' + (v === null || v === undefined ? '' : v) + '">'
-          + '<br><select class="estado">'
+        var celda = st === 'pendiente' ? ' celda-pend' : (st === 'no_presentado' ? ' celda-nopres' : (st === 'calificada' ? ' celda-cal' : ''));
+        html += '<td class="num' + celda + '" data-aid="' + a.id + '" data-sid="' + s.id + '">'
+          + '<input class="nota" type="number" min="0" max="10" step="1" inputmode="numeric" aria-label="Nota de '
+          + esc(s.last_name) + ' en ' + esc(a.title) + '" value="' + (v === null || v === undefined ? '' : v) + '">'
+          + '<br><select class="estado" aria-label="Estado">'
           + opt('sin_calificar', '—', st) + opt('pendiente', '0 pend.', st)
           + opt('no_presentado', '1 no pres.', st) + opt('calificada', 'nota', st)
           + '</select></td>';
       });
       var f = state.finals[s.id];
-      html += '<td class="num"><input class="nota" type="number" min="2" max="10" step="1" value="'
-        + (f == null ? '' : f) + '" data-final="' + s.id + '"></td></tr>';
+      html += '<td class="num"><input class="nota" type="number" min="2" max="10" step="1" inputmode="numeric" value="'
+        + (f == null ? '' : f) + '" data-final="' + s.id + '" aria-label="Nota final de ' + esc(s.last_name) + '"></td></tr>';
     });
     html += '</tbody></table></div>'
-      + '<div class="toolbar" style="margin-top:14px"><div class="spacer"></div>'
+      + '<div class="savebar"><span class="pendientes" id="pend"></span><div class="spacer"></div>'
       + '<button class="btn" id="guardar">Guardar cambios</button></div>';
     tabla.innerHTML = html;
+    actualizarPendientes(0);
 
-    // al escribir 0 o 1 el estado cambia solo (convención STV)
-    tabla.querySelectorAll('input.nota:not([data-final])').forEach(function (inp) {
+    // edición de actividad al tocar el título de la columna
+    tabla.querySelectorAll('[data-edit]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var a = state.activities.filter(function (x) { return x.id === Number(b.getAttribute('data-edit')); })[0];
+        if (a) modalActividad(a);
+      });
+    });
+
+    // al escribir 0 o 1 el estado cambia solo (convención STV); contar cambios
+    tabla.querySelectorAll('td[data-aid]').forEach(function (td) {
+      var inp = td.querySelector('input.nota'), sel = td.querySelector('select.estado');
+      function marcar() {
+        var v = inp.value, st = sel.value;
+        td.className = 'num' + (st === 'pendiente' ? ' celda-pend' : (st === 'no_presentado' ? ' celda-nopres' : (st === 'calificada' ? ' celda-cal' : '')));
+        td.setAttribute('data-sucia', '1');
+        actualizarPendientes();
+      }
       inp.addEventListener('input', function () {
-        var sel = inp.parentElement.querySelector('select.estado');
         if (inp.value === '0') sel.value = 'pendiente';
         else if (inp.value === '1') sel.value = 'no_presentado';
         else if (inp.value !== '') sel.value = 'calificada';
+        marcar();
       });
+      sel.addEventListener('change', marcar);
+    });
+    tabla.querySelectorAll('input[data-final]').forEach(function (inp) {
+      inp.addEventListener('input', function () { inp.setAttribute('data-sucia', '1'); actualizarPendientes(); });
     });
     view.querySelector('#guardar').addEventListener('click', guardar);
   }
   function opt(v, label, cur) { return '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + label + '</option>'; }
 
-  function modalActividad() {
+  function actualizarPendientes() {
+    var n = view.querySelectorAll('[data-sucia]').length;
+    var p = view.querySelector('#pend');
+    if (p) p.innerHTML = n ? '<b>' + n + '</b> cambio' + (n > 1 ? 's' : '') + ' sin guardar' : 'Todo guardado';
+  }
+
+  function modalActividad(act) {
+    var esEdicion = !!act;
     var fondo = el('div', 'modal-fondo');
     fondo.innerHTML =
-      '<div class="modal"><h3>Nueva actividad</h3>'
-      + '<div class="campo"><label>Título</label><input id="m-tit" placeholder="Trabajo práctico 5"></div>'
-      + '<div class="campo"><label>Descripción (opcional)</label><input id="m-des" placeholder="Qué hay que entregar"></div>'
+      '<div class="modal"><h3>' + (esEdicion ? 'Editar actividad' : 'Nueva actividad') + '</h3>'
+      + '<div class="campo"><label>Título</label><input id="m-tit" placeholder="Trabajo práctico 5" value="' + esc(act ? act.title : '') + '"></div>'
+      + '<div class="campo"><label>Descripción (opcional)</label><input id="m-des" placeholder="Qué hay que entregar" value="' + esc(act ? (act.description || '') : '') + '"></div>'
       + '<div class="fila-form">'
-      + '<div class="campo"><label>Plazo máximo de entrega</label><input id="m-fec" type="date"></div>'
+      + '<div class="campo"><label>Plazo máximo de entrega</label><input id="m-fec" type="date" value="' + (act && act.due_date ? act.due_date : '') + '"></div>'
       + '<div class="campo"><label>Trimestre</label><select id="m-term">'
-      + state.terms.map(function (t) { return '<option value="' + t.id + '"' + (t.id === state.term ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('')
+      + state.terms.map(function (t) { return '<option value="' + t.id + '"' + (t.id === (act ? act.term_id : state.term) ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('')
       + '</select></div></div>'
-      + '<div class="acciones"><button class="btn-ghost btn" id="m-cancel">Cancelar</button>'
-      + '<button class="btn" id="m-ok">Crear actividad</button></div></div>';
+      + '<div class="acciones">'
+      + (esEdicion ? '<button class="btn btn-peligro" id="m-del" style="margin-right:auto">Eliminar actividad</button>' : '')
+      + '<button class="btn-ghost btn" id="m-cancel">Cancelar</button>'
+      + '<button class="btn" id="m-ok">' + (esEdicion ? 'Guardar' : 'Crear actividad') + '</button></div></div>';
     document.body.appendChild(fondo);
     fondo.querySelector('#m-cancel').addEventListener('click', function () { fondo.remove(); });
     fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
+    if (esEdicion) fondo.querySelector('#m-del').addEventListener('click', function () {
+      if (!confirm('¿Eliminar "' + act.title + '"? También se borran sus calificaciones cargadas.')) return;
+      sb.from('grades').delete().eq('activity_id', act.id).then(function () {
+        return sb.from('activities').delete().eq('id', act.id);
+      }).then(function (r) {
+        fondo.remove();
+        if (r.error) alert('No se pudo eliminar: ' + r.error.message);
+        else cargarMateria();
+      });
+    });
     fondo.querySelector('#m-ok').addEventListener('click', function () {
       var tit = fondo.querySelector('#m-tit').value.trim();
       if (!tit) { fondo.querySelector('#m-tit').focus(); return; }
-      var btn = fondo.querySelector('#m-ok'); btn.disabled = true; btn.textContent = 'Creando…';
-      sb.from('activities').insert({
+      var btn = fondo.querySelector('#m-ok'); btn.disabled = true; btn.textContent = 'Guardando…';
+      var datos = {
         subject_id: state.subject, term_id: Number(fondo.querySelector('#m-term').value),
         title: tit, description: fondo.querySelector('#m-des').value.trim() || null,
-        due_date: fondo.querySelector('#m-fec').value || null, created_by: ctx.user.id
-      }).then(function (r) {
+        due_date: fondo.querySelector('#m-fec').value || null
+      };
+      var pedido = esEdicion
+        ? sb.from('activities').update(datos).eq('id', act.id)
+        : sb.from('activities').insert(Object.assign(datos, { created_by: ctx.user.id }));
+      pedido.then(function (r) {
         fondo.remove();
-        if (r.error) alert('No se pudo crear: ' + r.error.message);
+        if (r.error) alert('No se pudo guardar: ' + r.error.message);
         else cargarMateria();
       });
     });

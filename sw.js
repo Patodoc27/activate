@@ -1,8 +1,8 @@
 /* Service worker — caché simple de la shell; los datos siempre frescos */
-var CACHE = 'activate-v1';
+var CACHE = 'activate-v2';
 var SHELL = ['.', 'index.html', 'styles.css', 'config.js',
              'js/app.js', 'js/docente.js', 'js/familia.js', 'js/estudiante.js',
-             'vendor/supabase-js.js', 'icon.svg', 'manifest.webmanifest'];
+             'vendor/supabase-js.js', 'escudo.png', 'icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }));
@@ -19,13 +19,12 @@ self.addEventListener('fetch', function (e) {
   var url = e.request.url;
   if (url.indexOf('supabase.co') !== -1) return;            // datos siempre de la red
   if (e.request.method !== 'GET') return;
+  // shell: primero red (así se ven los cambios de la app), caché como respaldo offline
   e.respondWith(
-    caches.match(e.request).then(function (hit) {
-      return hit || fetch(e.request).then(function (res) {
-        var copia = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copia); });
-        return res;
-      });
-    })
+    fetch(e.request).then(function (res) {
+      var copia = res.clone();
+      caches.open(CACHE).then(function (c) { c.put(e.request, copia); });
+      return res;
+    }).catch(function () { return caches.match(e.request); })
   );
 });

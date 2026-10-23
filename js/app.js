@@ -3,10 +3,18 @@
   var cfg = window.APP_CONFIG;
   var sb = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
   var app = document.getElementById('app');
-  var escudoSVG = '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'
-    + '<path d="M24 3 41 9v13c0 11-7.2 19.5-17 23C14.2 41.5 7 33 7 22V9l17-6z" fill="#faf6ef"/>'
-    + '<path d="M15 31l9-19 9 19h-4.2L27 26.6h-6L19.2 31H15zm7.9-7.7h2.2l-1.1-2.9-1.1 2.9z" fill="#AC3636"/>'
-    + '</svg>';
+  var escudoIMG = '<img class="escudo-img" src="escudo.png" alt="Escudo del colegio">';
+
+  var ICONS = {
+    lapiz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+    calendario: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+    ojo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+    alerta: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
+    libro: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15zM20 22H6.5a2.5 2.5 0 0 1 0-5"/></svg>',
+    campana: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+    tilde: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+  };
+  function icon(nombre) { return ICONS[nombre] || ''; }
 
   var Views = window.Views = {};
 
@@ -46,17 +54,48 @@
     return 'sin calificación';
   }
 
+  function diasHasta(iso) {
+    if (!iso) return null;
+    var h = new Date(); h.setHours(0, 0, 0, 0);
+    var d = new Date(iso + 'T12:00:00'); d.setHours(0, 0, 0, 0);
+    return Math.round((d - h) / 86400000);
+  }
+  function textoDias(iso) {
+    var n = diasHasta(iso);
+    if (n == null) return '';
+    if (n === 0) return 'hoy';
+    if (n === 1) return 'mañana';
+    if (n > 1) return 'en ' + n + ' días';
+    if (n === -1) return 'ayer';
+    return 'hace ' + (-n) + ' días';
+  }
+  function chipDias(iso) {
+    var n = diasHasta(iso);
+    if (n == null) return '';
+    var cl = n === 0 ? 'hoy' : (n < 0 ? 'vencio' : (n <= 3 ? 'pronto' : ''));
+    return '<span class="dias ' + cl + '">' + textoDias(iso) + '</span>';
+  }
+
   window.A = { sb: sb, h: h, el: el, esc: esc, fmtFecha: fmtFecha, hoy: hoy,
-               notaTexto: notaTexto, notaDetalle: notaDetalle, escudoSVG: escudoSVG,
+               notaTexto: notaTexto, notaDetalle: notaDetalle, escudoIMG: escudoIMG,
+               icon: icon, diasHasta: diasHasta, textoDias: textoDias, chipDias: chipDias,
                Views: Views, boot: null };
 
   /* ---------- Login ---------- */
   function renderLogin() {
     app.innerHTML =
-      '<div class="login-wrap"><div class="login-card">'
-      + '<div class="escudo">' + escudoSVG + '</div>'
+      '<div class="login-wrap">'
+      + '<div class="login-hero">' + escudoIMG
       + '<h1>' + esc(cfg.APP_NAME) + '</h1>'
       + '<div class="escuela">' + esc(cfg.SCHOOL_NAME) + '</div>'
+      + '<div class="tagline">Las notas del colegio, al día. Docentes cargan, familias y estudiantes miran — todo en el mismo lugar.</div>'
+      + '<div class="login-feats">'
+      + '<span class="feat">' + icon('lapiz') + 'El docente carga actividad, plazo y nota</span>'
+      + '<span class="feat">' + icon('ojo') + 'Las familias ven sus hijos al instante</span>'
+      + '<span class="feat">' + icon('calendario') + 'Los estudiantes siguen sus entregas</span>'
+      + '</div></div>'
+      + '<div class="login-body"><div class="login-card">'
+      + '<h2>Entrar</h2><div class="sub-login">Con tu cuenta del colegio</div>'
       + '<div id="login-err"></div>'
       + '<form id="flogin">'
       + '<div class="campo"><label for="email">Correo</label>'
@@ -64,7 +103,7 @@
       + '<div class="campo"><label for="pass">Contraseña</label>'
       + '<input id="pass" type="password" required autocomplete="current-password" placeholder="••••••••"></div>'
       + '<button class="btn btn-block" type="submit">Entrar</button>'
-      + '</form></div></div>';
+      + '</form></div></div></div>';
     document.getElementById('flogin').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var btn = ev.target.querySelector('button');
@@ -86,7 +125,7 @@
   /* ---------- Marco con topbar ---------- */
   function renderShell(account, viewEl) {
     app.innerHTML =
-      '<div class="topbar"><div class="escudo">' + escudoSVG + '</div>'
+      '<div class="topbar">' + escudoIMG
       + '<div><div class="marca">' + esc(cfg.APP_NAME) + '</div>'
       + '<div class="sub">' + esc(cfg.SCHOOL_NAME) + '</div></div>'
       + '<div class="spacer"></div>'
