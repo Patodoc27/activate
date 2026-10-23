@@ -122,7 +122,10 @@ a{color:var(--rojo)}
 .stat.alerta .n{color:var(--rojo-osc)}
 
 /* Píldoras */
-.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.pills{display:flex;flex-wrap:nowrap;gap:8px;margin-bottom:16px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;
+  scrollbar-width:thin}
+.pills .pill{flex:none}
 .pill{border:1.5px solid var(--linea-fuerte);background:#fff;color:var(--tinta);
   border-radius:99px;padding:10px 17px;font-size:.9rem;font-weight:600;
   min-height:42px;transition:border-color .15s,background .15s}
@@ -179,16 +182,17 @@ a{color:var(--rojo)}
 .hijos-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
 details.materia{background:var(--papel);border:1px solid var(--linea);
   border-radius:var(--radio);margin-bottom:12px;box-shadow:var(--sombra);overflow:hidden}
-details.materia summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;
-  gap:10px;padding:16px 18px;cursor:pointer}
+details.materia summary{list-style:none;display:flex;flex-wrap:wrap;align-items:flex-start;
+  gap:10px;padding:14px 18px;cursor:pointer}
 details.materia summary::-webkit-details-marker{display:none}
+details.materia summary>div:first-child{flex:1;min-width:45%}
 details.materia summary .nombre{font-weight:700;font-size:1.04rem;font-family:Georgia,serif}
 details.materia summary .docente{color:var(--gris);font-size:.82rem}
-details.materia summary .chevron{margin-left:auto;color:var(--gris);transition:transform .2s}
+details.materia summary .chevron{color:var(--gris);transition:transform .2s;margin-top:2px}
 details.materia[open] summary .chevron{transform:rotate(180deg)}
 details.materia .cuerpo{border-top:1px solid var(--linea);padding:6px 18px 16px}
 details.materia.alerta{border-left:4px solid var(--rojo)}
-.sumchips{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap}
+.sumchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .chip{display:inline-block;padding:3px 11px;border-radius:99px;font-size:.76rem;
   font-weight:700;background:var(--rojo-suave);color:var(--rojo-osc)}
 .chip.final{background:var(--tinta);color:#f5efe6}
@@ -322,3 +326,25 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   animation:sacudir .3s}
 @keyframes sacudir{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 @media (prefers-reduced-motion:reduce){input.nota.invalida{animation:none}}
+
+/* Compacto para celulares */
+@media(max-width:520px){
+  .topbar{gap:8px;padding:9px 12px}
+  .topbar .escudo-img{width:34px;height:34px}
+  .topbar .marca{font-size:1rem}
+  .topbar .chip-rol{font-size:.62rem;padding:4px 9px}
+  .topbar .btn-curso{font-size:.74rem;padding:5px 10px}
+  .topbar .btn-salir{padding:6px 10px;font-size:.78rem}
+  .main{padding:16px 14px 110px}
+  .stat{padding:13px 14px}
+  .stat .n{font-size:1.5rem}
+  .seccion-titulo h2{font-size:1.35rem}
+}
+
+/* savebar en pantallas chicas: que no se corte */
+@media(max-width:520px){
+  .savebar{flex-wrap:wrap;gap:8px;padding:9px 10px}
+  .savebar .pendientes{flex-basis:100%;font-size:.78rem}
+  .savebar .btn{padding:9px 11px;font-size:.82rem;flex:1}
+  .savebar .btn-mini{padding:9px 8px;font-size:.78rem}
+}

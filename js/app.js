@@ -23,6 +23,11 @@
     agust: 'Perfil agustiniano', part: 'Participación en clase', carp: 'Carpeta',
     proy: 'Proyecto', otro: 'Otra actividad' };
   function nombreTipo(k) { return TIPO_NOMBRES[k] || ''; }
+  // "Historia (1° A)" y "Historia" son la misma materia para mostrar
+  function nombreMateria(n) {
+    return (n || '').replace(/[\(\[]?\s*1[°º]\s*[AB]\s*[\)\]]?/g, ' ')
+      .replace(/\s{2,}/g, ' ').trim();
+  }
   function tipoActividad(a) {
     if (!a || !a.kind) return '';
     var t = TIPO_NOMBRES[a.kind];
@@ -93,7 +98,7 @@
   window.A = { sb: sb, h: h, el: el, esc: esc, fmtFecha: fmtFecha, hoy: hoy,
                notaTexto: notaTexto, notaDetalle: notaDetalle, escudoIMG: escudoIMG,
                icon: icon, diasHasta: diasHasta, textoDias: textoDias, chipDias: chipDias,
-               nombreTipo: nombreTipo, tipoActividad: tipoActividad,
+               nombreTipo: nombreTipo, tipoActividad: tipoActividad, nombreMateria: nombreMateria,
                Views: Views, boot: null };
 
   /* ---------- Login ---------- */

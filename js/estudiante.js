@@ -36,7 +36,7 @@ window.Views.estudiante = function (view, ctx) {
 
   function dibujar(materias, terms, acts, grades, finals, termg) {
     var mname = {};
-    materias.forEach(function (m) { mname[m.id] = m.short_name || m.name; });
+    materias.forEach(function (m) { mname[m.id] = A.nombreMateria(m.short_name || m.name); });
     var gmap = {}, fmap = {}, tmap = {};
     grades.forEach(function (g) { gmap[g.activity_id] = g; });
     finals.forEach(function (f) { fmap[f.subject_id] = f.value; });

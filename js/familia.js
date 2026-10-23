@@ -133,7 +133,7 @@ window.Views.familia = function (view, ctx) {
         var cl = p.a.due_date === hoy ? ' entrega hoy' : '';
         html2 += '<div class="entrega' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])
           + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
-          + '</div></div><div class="info"><div class="materia-tag">' + esc(p.m.short_name || p.m.name)
+          + '</div></div><div class="info"><div class="materia-tag">' + esc(A.nombreMateria(p.m.short_name || p.m.name))
           + '</div><div class="tit">' + esc(p.a.title) + '</div></div>'
           + A.chipDias(p.a.due_date) + '</div>';
       });
@@ -145,7 +145,8 @@ window.Views.familia = function (view, ctx) {
       var acts = (d.acts[m.id] || []).filter(function (a) { return state.term === 0 || a.term_id === state.term; });
       var todas = d.acts[m.id] || [];
       var tg = state.term !== 0 ? d.termg[m.id + '_' + state.term] : null;
-      if (state.term !== 0 && !acts.length && tg == null) return; // ocultar materias sin actividades del trimestre
+      // solo mostrar materias que tengan algo para ver: actividades, trimestre o final
+      if (!acts.length && tg == null && d.finals[m.id] == null) return;
       var det = document.createElement('details');
       det.className = 'materia';
       var conNota = acts.filter(function (a) { var g = d.grades[a.id]; return g && g.status === 'calificada'; }).length;
@@ -172,7 +173,7 @@ window.Views.familia = function (view, ctx) {
           + (A.textoDias(a.due_date) ? ' (' + A.textoDias(a.due_date) + ')' : '') : '') + '</div></div>'
           + '<div class="' + cl + '">' + nota + '<small>' + esc(A.notaDetalle(g).toUpperCase().slice(0, 9)) + '</small></div></div>';
       });
-      det.innerHTML = '<summary><div><div class="nombre">' + esc(m.short_name || m.name) + '</div></div>'
+      det.innerHTML = '<summary><div><div class="nombre">' + esc(A.nombreMateria(m.short_name || m.name)) + '</div></div>'
         + '<div class="sumchips">' + chips + '</div>'
         + '<svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>'
         + '<div class="cuerpo">' + cuerpo + '</div>';
