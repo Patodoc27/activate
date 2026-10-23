@@ -287,3 +287,21 @@ details.materia.alerta{border-left:4px solid var(--rojo)}
 .buscar input{border:none;outline:none;padding:10px 0;font-size:.9rem;width:150px;background:transparent}
 tr.oculta{display:none}
 @media(max-width:600px){.buscar input{width:100px}}
+
+/* ---------- Login pulido ---------- */
+.login-card{overflow:hidden}
+.card-lip{position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--rojo-osc),var(--rojo) 45%,var(--dorado-suave,#c9a05a))}
+.inp-wrap{display:flex;align-items:center;gap:10px;background:#faf6f1;
+  border:1.5px solid var(--linea);border-radius:12px;padding:0 14px;transition:border-color .15s,box-shadow .15s}
+.inp-wrap svg{width:17px;height:17px;color:var(--gris);flex:none}
+.inp-wrap input{border:none !important;background:transparent !important;
+  padding:13px 0 !important;box-shadow:none !important;flex:1;font-size:.95rem}
+.inp-wrap:focus-within{border-color:var(--rojo);box-shadow:0 0 0 3px rgba(172,54,54,.13);background:#fff}
+.campo .inp-wrap{margin-top:2px}
+.btn-entrar{margin-top:6px;background:linear-gradient(135deg,#b53d3d,var(--rojo-osc));
+  box-shadow:0 6px 18px rgba(139,35,35,.32);font-size:.98rem;padding:13px}
+.btn-entrar:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(139,35,35,.38)}
+.btn-entrar:active{transform:translateY(0)}
+.login-hero{box-shadow:inset 0 -30px 60px -30px rgba(0,0,0,.25)}
+.login-card{border-top:none}

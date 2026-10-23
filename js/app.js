@@ -12,7 +12,9 @@
     alerta: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>',
     libro: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15zM20 22H6.5a2.5 2.5 0 0 1 0-5"/></svg>',
     campana: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
-    tilde: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+    tilde: '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    sobre: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>',
+    candado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="3"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
   };
   function icon(nombre) { return ICONS[nombre] || ''; }
 
@@ -88,17 +90,17 @@
       + '<div class="login-hero"><div class="marca-row">' + escudoIMG
       + '<div class="marca-col"><div class="escuela">' + esc(cfg.SCHOOL_NAME) + '</div>'
       + '<h1>' + esc(cfg.APP_NAME) + '</h1></div></div>'
-      + '<div class="tagline">Las notas del colegio, al día.</div>'
+      + '<div class="tagline">Las notas, actividades y entregas del colegio, siempre al día — para docentes, familias, estudiantes y dirección.</div>'
       + '</div>'
-      + '<div class="login-body"><div class="login-card">'
+      + '<div class="login-body"><div class="login-card"><div class="card-lip"></div>'
       + '<h2>Entrar</h2><div class="sub-login">Con tu cuenta del colegio</div>'
       + '<div id="login-err"></div>'
       + '<form id="flogin">'
       + '<div class="campo"><label for="email">Correo</label>'
-      + '<input id="email" type="email" required autocomplete="username" placeholder="tu@correo.com"></div>'
+      + '<div class="inp-wrap">' + icon('sobre') + '<input id="email" type="email" required autocomplete="username" placeholder="tu@correo.com"></div></div>'
       + '<div class="campo"><label for="pass">Contraseña</label>'
-      + '<input id="pass" type="password" required autocomplete="current-password" placeholder="••••••••"></div>'
-      + '<button class="btn btn-block" type="submit">Entrar</button>'
+      + '<div class="inp-wrap">' + icon('candado') + '<input id="pass" type="password" required autocomplete="current-password" placeholder="••••••••"></div></div>'
+      + '<button class="btn btn-block btn-entrar" type="submit">Entrar</button>'
       + '</form></div></div></div>';
     document.getElementById('flogin').addEventListener('submit', function (ev) {
       ev.preventDefault();
