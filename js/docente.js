@@ -163,7 +163,12 @@ window.Views.docente = function (view, ctx) {
     var tabla = view.querySelector('#tabla');
     if (!state.students.length) { tabla.innerHTML = '<div class="vacio">Sin estudiantes en esta materia.</div>'; return; }
     if (!acts.length) {
-      tabla.innerHTML = '<div class="vacio">' + A.icon('calendario') + 'Todavía no hay actividades en este trimestre.<br>Creá la primera con "+ Nueva actividad".</div>';
+      tabla.innerHTML = '<div class="vacio">' + A.icon('calendario') + 'Todavía no hay actividades en este trimestre.<br>Creá la primera con "+ Nueva actividad".</div>'
+        + '<div class="savebar"><div class="spacer"></div>'
+        + '<button class="btn btn-ghost btn-mini" id="excel">Descargar Excel</button>'
+        + '<button class="btn btn-ghost btn-mini" id="imprimir">Imprimir</button></div>';
+      view.querySelector('#imprimir').addEventListener('click', imprimir);
+      view.querySelector('#excel').addEventListener('click', descargarExcel);
       return;
     }
     var html = '<div class="planilla-wrap"><table class="planilla"><thead><tr>'
@@ -204,12 +209,17 @@ window.Views.docente = function (view, ctx) {
     });
     html += '</tbody></table></div>'
       + '<div class="savebar"><span class="pendientes" id="pend"></span><div class="spacer"></div>'
+      + '<button class="btn btn-ghost btn-mini" id="excel">Descargar Excel</button>'
+      + '<button class="btn btn-ghost btn-mini" id="imprimir">Imprimir</button>'
       + '<button class="btn btn-ghost btn-mini" id="pesos">Pesos %</button>'
       + '<button class="btn btn-ghost btn-mini" id="habilitar">Habilitar trimestre</button>'
       + '<button class="btn" id="guardar">Guardar</button></div>';
     tabla.innerHTML = html;
     aplicarFiltro();
     actualizarPendientes();
+
+    view.querySelector('#imprimir').addEventListener('click', imprimir);
+    view.querySelector('#excel').addEventListener('click', descargarExcel);
 
     tabla.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -604,6 +614,94 @@ window.Views.docente = function (view, ctx) {
         else cargarMateria();
       });
     });
+  }
+
+  // Exportar: planilla en A4 horizontal (imprimir/PDF) y CSV para Excel
+  function nombreMateriaSel() {
+    var m = state.subjects.filter(function (s) { return s.ids.join(',') === state.subject; })[0];
+    return m ? m.nombre : '';
+  }
+  function nombreTermSel() {
+    var t = state.terms.filter(function (x) { return x.id === state.term; })[0];
+    return t ? t.name : '';
+  }
+  function notaCelda(g) {
+    if (!g) return '';
+    if (g.status === 'calificada') return g.value != null ? String(g.value) : '';
+    if (g.status === 'pendiente') return '0';
+    if (g.status === 'no_presentado') return '1';
+    return '';
+  }
+  function notaCeldaTxt(g) {
+    if (!g) return '—';
+    if (g.status === 'calificada') return g.value != null ? String(g.value) : '—';
+    if (g.status === 'pendiente') return 'Pend.';
+    if (g.status === 'no_presentado') return 'No pres.';
+    return '—';
+  }
+  function nombreArchivo() {
+    return ('planilla-' + nombreMateriaSel() + '-' + (ctx.course ? ctx.course.name : '') + '-' + nombreTermSel())
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  function descargarExcel() {
+    var acts = actsDelTerm();
+    var cab = ['Estudiante'].concat(acts.map(function (a) {
+      return tipoActividad(a) + a.title + (a.weight != null ? ' (' + a.weight + '%)' : '');
+    }), ['Trimestre', 'Final']);
+    var filas = [cab];
+    state.students.forEach(function (s) {
+      var fila = [s.last_name + ', ' + s.first_name];
+      acts.forEach(function (a) {
+        var g = state.grades[a.id + '_' + s.id];
+        fila.push(!g ? '' : (g.status === 'calificada' ? String(g.value).replace('.', ',')
+          : (g.status === 'pendiente' ? 'Pendiente' : (g.status === 'no_presentado' ? 'No presentado' : ''))));
+      });
+      var tg = state.termGrades[s.id + '_' + state.term];
+      var nt = tg ? tg.value : notaTrimestre(s.id);
+      fila.push(nt != null ? String(nt).replace('.', ',') : '');
+      fila.push(state.finals[s.id] != null ? String(state.finals[s.id]).replace('.', ',') : '');
+      filas.push(fila);
+    });
+    var csv = '﻿' + filas.map(function (f) {
+      return f.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(';');
+    }).join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = nombreArchivo() + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+
+  function imprimir() {
+    var acts = actsDelTerm();
+    var hoy = new Date().toLocaleDateString('es-AR');
+    var h = '<div class="ph-head"><div class="ph-brand">Activate · Santo Tomás de Villanueva</div>'
+      + '<h1>' + esc(nombreMateriaSel()) + ' — ' + esc(ctx.course ? ctx.course.name : '') + '</h1>'
+      + '<div class="ph-meta">' + esc(nombreTermSel()) + ' · ' + state.students.length + ' estudiantes · ' + hoy + '</div></div>'
+      + '<table class="ph-tabla"><thead><tr><th class="ph-alumno">Estudiante</th>';
+    acts.forEach(function (a) {
+      h += '<th>' + esc(tipoActividad(a) + a.title) + (a.weight != null ? '<br><span class="ph-peso">' + a.weight + '%</span>' : '') + '</th>';
+    });
+    h += '<th class="ph-trim">Trim.</th><th class="ph-trim">Final</th></tr></thead><tbody>';
+    state.students.forEach(function (s) {
+      h += '<tr><td class="ph-alumno">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</td>';
+      acts.forEach(function (a) {
+        var g = state.grades[a.id + '_' + s.id];
+        h += '<td' + (g && g.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(g) + '</td>';
+      });
+      var tg = state.termGrades[s.id + '_' + state.term];
+      var nt = tg ? tg.value : notaTrimestre(s.id);
+      h += '<td class="ph-trim">' + (nt != null ? '<b>' + nt + '</b>' : '—') + '</td>';
+      h += '<td class="ph-trim">' + (state.finals[s.id] != null ? '<b>' + state.finals[s.id] + '</b>' : '—') + '</td></tr>';
+    });
+    h += '</tbody></table><div class="ph-pie">Pend. = pendiente de entrega · No pres. = no presentado · — = sin calificar · '
+      + 'Trim. calculada por peso (total ' + pesoTotal() + '%)</div>';
+    var z = document.getElementById('print-area');
+    if (!z) { z = document.createElement('div'); z.id = 'print-area'; document.body.appendChild(z); }
+    z.innerHTML = h;
+    window.print();
   }
 
   cargar();

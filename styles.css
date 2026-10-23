@@ -348,3 +348,25 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   .savebar .btn{padding:9px 11px;font-size:.82rem;flex:1}
   .savebar .btn-mini{padding:9px 8px;font-size:.78rem}
 }
+
+/* ===== Impresión de planilla: A4 horizontal, márgenes 1,5 cm ===== */
+#print-area{display:none}
+@media print{
+  @page{size:A4 landscape;margin:1.5cm}
+  html,body{background:#fff!important}
+  body>*:not(#print-area){display:none!important}
+  #print-area{display:block!important;color:#111;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
+  .ph-head{margin-bottom:10px}
+  .ph-brand{font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8a1f24}
+  .ph-head h1{font-size:14pt;margin:2px 0 1px;font-family:'Fraunces',Georgia,serif}
+  .ph-meta{font-size:8pt;color:#555}
+  .ph-tabla{width:100%;border-collapse:collapse;font-size:7.5pt}
+  .ph-tabla th,.ph-tabla td{border:.6pt solid #999;padding:2.5pt 3pt;text-align:center}
+  .ph-tabla thead th{background:#efe9df;font-weight:700;font-size:7pt;vertical-align:bottom;line-height:1.15}
+  .ph-tabla .ph-alumno{text-align:left;white-space:nowrap;font-weight:600}
+  .ph-tabla .ph-nota{font-weight:700}
+  .ph-tabla .ph-trim{background:#f5f1ea;font-weight:700}
+  .ph-peso{font-weight:400;font-size:6.5pt;color:#555}
+  .ph-tabla tbody tr{page-break-inside:avoid}
+  .ph-pie{margin-top:8px;font-size:7pt;color:#666}
+}
