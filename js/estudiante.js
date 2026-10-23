@@ -22,7 +22,7 @@ window.Views.estudiante = function (view, ctx) {
           (rs[1].data || []).forEach(function (t) { terms[t.id] = t; });
           var mids = materias.map(function (m) { return m.id; });
           Promise.all([
-            sb.from('activities').select('id,subject_id,term_id,title,description,due_date,weight')
+            sb.from('activities').select('id,subject_id,term_id,title,kind,description,due_date,weight')
               .in('subject_id', mids).order('due_date', { ascending: true }),
             sb.from('grades').select('activity_id,value,status').eq('student_id', state.me.id),
             sb.from('final_grades').select('subject_id,value').eq('student_id', state.me.id),
@@ -67,7 +67,7 @@ window.Views.estudiante = function (view, ctx) {
       html += '<div class="entrega' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])
         + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
         + '</div></div><div class="info"><div class="materia-tag">' + esc(mname[a.subject_id] || '')
-        + '</div><div class="tit">' + esc(a.title) + '</div>'
+        + '</div><div class="tit">' + esc(A.tipoActividad(a) + a.title) + '</div>'
         + (a.weight != null ? '<div class="meta">peso ' + a.weight + '%</div>' : '')
         + (a.description ? '<div class="meta">' + esc(a.description) + '</div>' : '')
         + '</div>' + A.chipDias(a.due_date) + '</div>';
@@ -102,7 +102,7 @@ window.Views.estudiante = function (view, ctx) {
           + (fmap[mid] != null ? ' <span class="chip final">Final ' + fmap[mid] + '</span>' : '') + '</div>';
         porMat[mid].forEach(function (a) {
           var g = gmap[a.id];
-          html += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(a.title) + '</div>'
+          html += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(A.tipoActividad(a) + a.title) + '</div>'
             + '<div class="meta">' + (a.weight != null ? 'peso ' + a.weight + '% · ' : '')
             + (a.due_date ? A.fmtFecha(a.due_date) : '') + '</div></div>'
             + '<div class="nota-box' + (g.value <= 5 ? ' alerta' : '') + '">' + g.value + '</div></div>';

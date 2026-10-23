@@ -44,7 +44,7 @@ window.Views.familia = function (view, ctx) {
       var mids = materias.map(function (m) { return m.id; });
       if (!mids.length) { state.data = { materias: [], acts: {}, grades: {}, finals: {}, terms: {}, termsList: [] }; dibujar(); return; }
       Promise.all([
-        sb.from('activities').select('id,subject_id,term_id,title,description,due_date,weight')
+        sb.from('activities').select('id,subject_id,term_id,title,kind,description,due_date,weight')
           .in('subject_id', mids).order('due_date', { ascending: true }),
         sb.from('grades').select('activity_id,value,status').eq('student_id', sid),
         sb.from('final_grades').select('subject_id,value').eq('student_id', sid),
@@ -165,7 +165,7 @@ window.Views.familia = function (view, ctx) {
         if (nota === '—') cl += ' vacia';
         else if (g && g.status === 'calificada' && g.value <= 5) cl += ' alerta';
         var tname = d.terms[a.term_id] ? d.terms[a.term_id].name : '';
-        cuerpo += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(a.title) + '</div>'
+        cuerpo += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(A.tipoActividad(a) + a.title) + '</div>'
           + '<div class="meta">' + esc(tname)
           + (a.weight != null ? ' · peso ' + a.weight + '%' : '')
           + (a.due_date ? ' · entrega ' + A.fmtFecha(a.due_date)

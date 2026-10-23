@@ -17,30 +17,49 @@ window.Views.docente = function (view, ctx) {
     ]).then(function (rs) {
       var enCurso = {};
       (rs[1].data || []).forEach(function (x) { enCurso[x.subject_id] = true; });
-      state.subjects = (rs[0].data || []).map(function (x) { return x.subjects; })
+      var lista = (rs[0].data || []).map(function (x) { return x.subjects; })
         .filter(function (s) { return !CURSO || enCurso[s.id]; });
+      // Agrupar por nombre normalizado: "Historia (1° A)" y "Historia" son una sola materia
+      var grupos = {}, orden = [];
+      lista.forEach(function (s) {
+        var nom = nombreMateria(s.name);
+        if (!grupos[nom]) { grupos[nom] = { nombre: nom, ids: [] }; orden.push(nom); }
+        grupos[nom].ids.push(s.id);
+      });
+      state.subjects = orden.map(function (n) { return grupos[n]; });
       if (!state.subjects.length) {
         view.innerHTML = '<div class="vacio">' + A.icon('libro') + 'No tenés materias en este curso.<br>Tocá el nombre del curso arriba para cambiar, o avisá a dirección.</div>';
         return;
       }
       state.terms = rs[2].data || [];
       if (!state.term && state.terms.length) state.term = state.terms[0].id;
-      if (!state.subjects.filter(function (s) { return s.id === state.subject; }).length)
-        state.subject = state.subjects[0].id;
+      if (!state.subjects.filter(function (s) { return s.ids.join(',') === state.subject; }).length)
+        state.subject = state.subjects[0].ids.join(',');
       cargarMateria();
     });
   }
 
+  function nombreMateria(n) {
+    return (n || '').replace(/[\(\[]?\s*1[°º]\s*[AB]\s*[\)\]]?/g, ' ')
+      .replace(/\s{2,}/g, ' ').trim();
+  }
+
+  function idsMateria() { return state.subject.split(',').map(Number); }
+
   function cargarMateria() {
-    var sid = state.subject;
+    var sids = idsMateria();
+    var sid = sids[0];
     Promise.all([
-      sb.from('activities').select('id,title,description,due_date,term_id,weight')
-        .eq('subject_id', sid).order('due_date', { ascending: true }),
-      sb.from('enrollments').select('student_id, students(id,last_name,first_name)').eq('subject_id', sid),
-      sb.from('final_grades').select('student_id,value').eq('subject_id', sid)
+      sb.from('activities').select('id,title,kind,description,due_date,term_id,weight')
+        .in('subject_id', sids).order('due_date', { ascending: true }),
+      sb.from('enrollments').select('student_id, students(id,last_name,first_name,course_id)').in('subject_id', sids),
+      sb.from('final_grades').select('student_id,value').in('subject_id', sids)
     ]).then(function (rs) {
       state.activities = rs[0].data || [];
+      var vistos = {};
       state.students = (rs[1].data || []).map(function (e) { return e.students; })
+        .filter(function (s) { return !CURSO || s.course_id === CURSO; })
+        .filter(function (s) { if (vistos[s.id]) return false; vistos[s.id] = 1; return true; })
         .sort(function (a, b) { return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name); });
       state.finals = {};
       (rs[2].data || []).forEach(function (f) { state.finals[f.student_id] = f.value; });
@@ -55,7 +74,7 @@ window.Views.docente = function (view, ctx) {
     });
     // term_grades por separado para traer term_id
     sb.from('term_grades').select('student_id,term_id,value,computed')
-      .eq('subject_id', sid).then(function (rt) {
+      .in('subject_id', sids).then(function (rt) {
         state.termGrades = {};
         (rt.data || []).forEach(function (t) { state.termGrades[t.student_id + '_' + t.term_id] = t; });
       });
@@ -100,6 +119,8 @@ window.Views.docente = function (view, ctx) {
       + '<span class="nota">Tocá el título de una actividad para editarla; la nota se guarda sola al escribirla</span></div>'
       + '<div class="pills" id="pills"></div>'
       + '<div class="toolbar"><div class="pills grupo" id="pillsT" style="margin:0"></div><div class="spacer"></div>'
+      + '<div class="nav-tabla"><button class="btn-nav" id="navIzq" aria-label="Columnas anteriores">‹</button>'
+      + '<button class="btn-nav" id="navDer" aria-label="Columnas siguientes">›</button></div>'
       + '<div class="buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="filtro" placeholder="Buscar alumno…"></div>'
       + '<button class="btn btn-mini" id="nueva">+ Nueva actividad</button></div>'
       + '<div class="stats">'
@@ -113,8 +134,9 @@ window.Views.docente = function (view, ctx) {
 
     var pills = view.querySelector('#pills');
     state.subjects.forEach(function (s) {
-      var b = el('button', 'pill' + (s.id === state.subject ? ' activa' : ''), s.name);
-      b.addEventListener('click', function () { state.subject = s.id; cargarMateria(); });
+      var clave = s.ids.join(',');
+      var b = el('button', 'pill' + (clave === state.subject ? ' activa' : ''), s.nombre);
+      b.addEventListener('click', function () { state.subject = clave; cargarMateria(); });
       pills.appendChild(b);
     });
     var pillsT = view.querySelector('#pillsT');
@@ -124,6 +146,12 @@ window.Views.docente = function (view, ctx) {
       pillsT.appendChild(b);
     });
     view.querySelector('#nueva').addEventListener('click', function () { modalActividad(null); });
+    function moverTabla(dir) {
+      var w = view.querySelector('.planilla-wrap');
+      if (w) w.scrollBy({ left: dir * Math.max(240, w.clientWidth * 0.7), behavior: 'smooth' });
+    }
+    view.querySelector('#navIzq').addEventListener('click', function () { moverTabla(-1); });
+    view.querySelector('#navDer').addEventListener('click', function () { moverTabla(1); });
     var filtro = view.querySelector('#filtro');
     filtro.value = state.filtro;
     filtro.addEventListener('input', function () {
@@ -142,7 +170,7 @@ window.Views.docente = function (view, ctx) {
       + '<th class="col-alumno alumno">Estudiante</th>';
     acts.forEach(function (a) {
       html += '<th class="num"><button class="th-act" data-edit="' + a.id + '" title="'
-        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(a.title) + '</span>'
+        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(tipoActividad(a) + a.title) + '</span>'
         + '<span class="t2">' + (a.weight != null ? a.weight + '%' : 'sin peso')
         + (a.due_date ? ' · ' + A.textoDias(a.due_date) : '') + '</span></button></th>';
     });
@@ -262,7 +290,7 @@ window.Views.docente = function (view, ctx) {
     view.querySelectorAll('input[data-final][data-sucia]').forEach(function (inp) {
       if (inp.value === '') { inp.removeAttribute('data-sucia'); return; }
       finales.push({ student_id: Number(inp.getAttribute('data-final')),
-        subject_id: state.subject, value: Number(inp.value), updated_by: ctx.user.id, inp: inp });
+        subject_id: idsMateria()[0], value: Number(inp.value), updated_by: ctx.user.id, inp: inp });
     });
     return { filas: filas, finales: finales };
   }
@@ -327,12 +355,32 @@ window.Views.docente = function (view, ctx) {
       });
   }
 
+  var TIPOS = [
+    ['eval', 'Evaluación escrita'], ['oral', 'Evaluación oral'],
+    ['tp', 'Trabajo práctico'], ['cuest', 'Cuestionario virtual'],
+    ['juego', 'Juego educativo'], ['agust', 'Perfil agustiniano'],
+    ['part', 'Participación en clase'], ['carp', 'Carpeta'],
+    ['proy', 'Proyecto'], ['otro', 'Otra actividad']
+  ];
+  function nombreTipo(k) {
+    for (var i = 0; i < TIPOS.length; i++) if (TIPOS[i][0] === k) return TIPOS[i][1];
+    return '';
+  }
+  function tipoActividad(a) {
+    var t = a && a.kind ? nombreTipo(a.kind) : '';
+    if (!t || (a.title || '').toLowerCase().indexOf(t.toLowerCase()) === 0) return '';
+    return t + ' · ';
+  }
+
   function modalActividad(act) {
     var esEdicion = !!act;
     var fondo = el('div', 'modal-fondo');
     fondo.innerHTML =
       '<div class="modal"><h3>' + (esEdicion ? 'Editar actividad' : 'Nueva actividad') + '</h3>'
-      + '<div class="campo"><label>Título</label><input id="m-tit" placeholder="Trabajo práctico 5" value="' + esc(act ? act.title : '') + '"></div>'
+      + '<div class="campo"><label>Tipo de actividad</label><select id="m-tipo">'
+      + TIPOS.map(function (t) { return '<option value="' + t[0] + '"' + (act && act.kind === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('')
+      + '</select></div>'
+      + '<div class="campo"><label>Tema o nombre</label><input id="m-tit" placeholder="ej. Fracciones, capítulo 3" value="' + esc(act ? act.title : '') + '"></div>'
       + '<div class="campo"><label>Descripción (opcional)</label><input id="m-des" placeholder="Qué hay que entregar" value="' + esc(act ? (act.description || '') : '') + '"></div>'
       + '<div class="fila-form">'
       + '<div class="campo"><label>Peso % del trimestre</label><input id="m-peso" type="number" min="0" max="100" step="5" inputmode="numeric" placeholder="ej. 30" value="' + (act && act.weight != null ? act.weight : '') + '">'
@@ -375,7 +423,8 @@ window.Views.docente = function (view, ctx) {
       }
       var btn = fondo.querySelector('#m-ok'); btn.disabled = true; btn.textContent = 'Guardando…';
       var datos = {
-        subject_id: state.subject, term_id: Number(fondo.querySelector('#m-term').value),
+        subject_id: idsMateria()[0], term_id: Number(fondo.querySelector('#m-term').value),
+        kind: fondo.querySelector('#m-tipo').value,
         title: tit, description: fondo.querySelector('#m-des').value.trim() || null,
         due_date: fondo.querySelector('#m-fec').value || null, weight: peso
       };
@@ -421,7 +470,7 @@ window.Views.docente = function (view, ctx) {
         if (inp.value === '') return;
         var sid = Number(inp.getAttribute('data-hab'));
         var nt = notaTrimestre(sid);
-        ups.push({ student_id: sid, subject_id: state.subject, term_id: state.term,
+        ups.push({ student_id: sid, subject_id: idsMateria()[0], term_id: state.term,
           computed: nt, value: Number(inp.value), updated_by: ctx.user.id });
       });
       if (!ups.length) { fondo.remove(); return; }

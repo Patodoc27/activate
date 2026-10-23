@@ -18,6 +18,18 @@
   };
   function icon(nombre) { return ICONS[nombre] || ''; }
 
+  var TIPO_NOMBRES = { eval: 'Evaluación escrita', oral: 'Evaluación oral',
+    tp: 'Trabajo práctico', cuest: 'Cuestionario virtual', juego: 'Juego educativo',
+    agust: 'Perfil agustiniano', part: 'Participación en clase', carp: 'Carpeta',
+    proy: 'Proyecto', otro: 'Otra actividad' };
+  function nombreTipo(k) { return TIPO_NOMBRES[k] || ''; }
+  function tipoActividad(a) {
+    if (!a || !a.kind) return '';
+    var t = TIPO_NOMBRES[a.kind];
+    if (!t || (a.title || '').toLowerCase().indexOf(t.toLowerCase()) === 0) return '';
+    return t + ' · ';
+  }
+
   var Views = window.Views = {};
 
   function h(html) { var d = document.createElement('div'); d.innerHTML = html; return d; }
@@ -81,6 +93,7 @@
   window.A = { sb: sb, h: h, el: el, esc: esc, fmtFecha: fmtFecha, hoy: hoy,
                notaTexto: notaTexto, notaDetalle: notaDetalle, escudoIMG: escudoIMG,
                icon: icon, diasHasta: diasHasta, textoDias: textoDias, chipDias: chipDias,
+               nombreTipo: nombreTipo, tipoActividad: tipoActividad,
                Views: Views, boot: null };
 
   /* ---------- Login ---------- */

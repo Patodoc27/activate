@@ -302,3 +302,12 @@ tr.oculta{display:none}
 .btn-entrar:active{transform:translateY(0)}
 .login-hero{box-shadow:inset 0 -30px 60px -30px rgba(0,0,0,.25)}
 .login-card{border-top:none}
+
+/* Navegación de planilla en pantallas chicas */
+.nav-tabla{display:flex;gap:6px}
+.btn-nav{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--linea-fuerte);
+  background:var(--papel);color:var(--tinta);font-size:1.25rem;line-height:1;font-weight:700;
+  display:flex;align-items:center;justify-content:center;padding-bottom:3px}
+.btn-nav:hover{border-color:var(--rojo);color:var(--rojo);background:var(--rojo-suave)}
+.btn-nav:active{transform:scale(.94)}
+.planilla-wrap{-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
