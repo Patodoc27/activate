@@ -1,0 +1,173 @@
+/* Calificaciones STV — paleta del escudo: rojo, negro, crema */
+:root{
+  --rojo:#AC3636; --rojo-osc:#8c2b2b; --rojo-suave:#f7ecec;
+  --tinta:#1f1b18; --gris:#6f665f; --crema:#faf6ef; --papel:#fffdf9;
+  --linea:#e6ddd2; --verde:#2e7d4f; --verde-suave:#eaf4ee;
+  --ambre:#a86a10; --ambre-suave:#fbf2e0;
+  --radio:14px; --sombra:0 1px 3px rgba(31,27,24,.08),0 6px 24px rgba(31,27,24,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+  background:var(--crema); color:var(--tinta); min-height:100vh;
+}
+h1,h2,h3,.marca{font-family:Georgia,'Times New Roman',serif;font-weight:700}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:var(--rojo)}
+
+/* ---------- Cabecera ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+  padding:12px 20px;background:var(--tinta);color:#f5efe6;
+}
+.topbar .escudo{width:38px;height:38px;flex:none;border-radius:9px;background:var(--rojo);
+  display:flex;align-items:center;justify-content:center}
+.topbar .escudo svg{width:26px;height:26px}
+.topbar .marca{font-size:1.15rem;line-height:1.1}
+.topbar .sub{font-size:.78rem;opacity:.75}
+.topbar .spacer{flex:1}
+.topbar .chip-rol{background:var(--rojo);color:#fff;font-size:.75rem;font-weight:600;
+  padding:4px 12px;border-radius:99px;letter-spacing:.03em}
+.btn-salir{background:transparent;border:1px solid rgba(245,239,230,.4);color:#f5efe6;
+  padding:6px 14px;border-radius:99px;font-size:.82rem}
+.btn-salir:hover{background:rgba(255,255,255,.1)}
+
+/* ---------- Login ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:
+   radial-gradient(1200px 500px at 50% -120px, rgba(172,54,54,.10), transparent),
+   var(--crema)}
+.login-card{width:100%;max-width:420px;background:var(--papel);border:1px solid var(--linea);
+  border-radius:20px;box-shadow:var(--sombra);padding:36px 30px;text-align:center}
+.login-card .escudo{width:72px;height:72px;margin:0 auto 16px;border-radius:18px;
+  background:var(--rojo);display:flex;align-items:center;justify-content:center}
+.login-card .escudo svg{width:48px;height:48px}
+.login-card h1{font-size:1.6rem;margin-bottom:4px}
+.login-card .escuela{color:var(--gris);font-size:.9rem;margin-bottom:26px}
+.campo{text-align:left;margin-bottom:16px}
+.campo label{display:block;font-size:.8rem;font-weight:600;color:var(--gris);
+  margin-bottom:6px;letter-spacing:.02em}
+.campo input,.campo select,.campo textarea{
+  width:100%;padding:12px 14px;border:1px solid var(--linea);border-radius:10px;
+  background:#fff;font-size:1rem}
+.campo input:focus,.campo select:focus,.campo textarea:focus{
+  outline:2px solid var(--rojo);outline-offset:1px;border-color:var(--rojo)}
+.btn{ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--rojo);color:#fff;border:none;border-radius:12px;
+  padding:13px 22px;font-size:1rem;font-weight:600;transition:background .15s}
+.btn:hover{background:var(--rojo-osc)}
+.btn:active{transform:scale(.98)}
+.btn-block{width:100%}
+.btn-ghost{background:transparent;color:var(--tinta);border:1px solid var(--linea)}
+.btn-ghost:hover{background:#f3ede3}
+.btn-mini{padding:7px 14px;font-size:.85rem;border-radius:9px}
+.error-login{background:#fdecec;border:1px solid #f2c9c9;color:#8c2b2b;
+  border-radius:10px;padding:10px 14px;font-size:.87rem;margin-bottom:14px;text-align:left}
+
+/* ---------- Layout principal ---------- */
+.main{max-width:1100px;margin:0 auto;padding:22px 20px 80px}
+@media(min-width:900px){.main{max-width:1280px}}
+.seccion-titulo{display:flex;align-items:baseline;gap:12px;margin:4px 0 16px}
+.seccion-titulo h2{font-size:1.35rem}
+.seccion-titulo .nota{color:var(--gris);font-size:.85rem}
+
+/* Tarjetas */
+.card{background:var(--papel);border:1px solid var(--linea);border-radius:var(--radio);
+  box-shadow:var(--sombra);padding:18px}
+.grid{display:grid;gap:14px}
+@media(min-width:700px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr 1fr}}
+
+/* Selector de materia / curso (píldoras) */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.pill{border:1px solid var(--linea);background:#fff;color:var(--tinta);
+  border-radius:99px;padding:9px 16px;font-size:.9rem;font-weight:600}
+.pill:hover{border-color:var(--rojo)}
+.pill.activa{background:var(--tinta);color:#f5efe6;border-color:var(--tinta)}
+
+/* ---------- Vista docente ---------- */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px}
+.toolbar .spacer{flex:1}
+.planilla{width:100%;border-collapse:collapse;background:#fff}
+.planilla th,.planilla td{padding:10px 12px;border-bottom:1px solid var(--linea);
+  text-align:left;font-size:.92rem}
+.planilla thead th{background:var(--tinta);color:#f5efe6;font-weight:600;
+  position:sticky;top:60px;font-size:.82rem}
+.planilla tbody tr:nth-child(even){background:#fbf8f2}
+.planilla td.num,.planilla th.num{text-align:center;width:110px}
+.planilla .alumno{font-weight:600}
+.planilla input.nota{width:64px;text-align:center;padding:7px 8px;
+  border:1px solid var(--linea);border-radius:8px;font-size:1rem;font-weight:600}
+.planilla select.estado{padding:7px 6px;border:1px solid var(--linea);
+  border-radius:8px;font-size:.85rem;background:#fff}
+.planilla-wrap{overflow-x:auto;border:1px solid var(--linea);border-radius:var(--radio);
+  background:#fff}
+.badge-estado{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:600}
+.b-pend{background:var(--ambre-suave);color:var(--ambre)}
+.b-nopres{background:#fdecec;color:var(--rojo-osc)}
+.b-sin{background:#efeae2;color:var(--gris)}
+.b-cal{background:var(--verde-suave);color:var(--verde)}
+
+/* ---------- Vista familia / estudiante ---------- */
+.hijos-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+details.materia{background:var(--papel);border:1px solid var(--linea);
+  border-radius:var(--radio);margin-bottom:12px;box-shadow:var(--sombra)}
+details.materia summary{list-style:none;display:flex;flex-wrap:wrap;align-items:center;
+  gap:10px;padding:16px 18px;cursor:pointer}
+details.materia summary::-webkit-details-marker{display:none}
+details.materia summary .nombre{font-weight:700;font-size:1.02rem}
+details.materia summary .docente{color:var(--gris);font-size:.82rem}
+details.materia summary .chevron{margin-left:auto;color:var(--gris);transition:transform .2s}
+details.materia[open] summary .chevron{transform:rotate(180deg)}
+details.materia .cuerpo{border-top:1px solid var(--linea);padding:6px 18px 16px}
+.sumchips{flex-basis:100%;display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-block;padding:3px 11px;border-radius:99px;font-size:.76rem;
+  font-weight:600;background:var(--rojo-suave);color:var(--rojo-osc)}
+.chip.final{background:var(--tinta);color:#f5efe6}
+.fila-act{display:flex;align-items:center;gap:12px;padding:11px 4px;
+  border-bottom:1px dashed var(--linea)}
+.fila-act:last-child{border-bottom:none}
+.fila-act .info{flex:1;min-width:0}
+.fila-act .titulo{font-weight:600;font-size:.93rem}
+.fila-act .meta{color:var(--gris);font-size:.78rem;margin-top:2px}
+.nota-box{min-width:52px;height:52px;border-radius:12px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-weight:700;font-size:1.15rem;
+  background:var(--rojo-suave);color:var(--rojo-osc)}
+.nota-box small{font-size:.6rem;font-weight:600;letter-spacing:.04em}
+.nota-box.alerta{background:#fdecec;color:var(--rojo-osc);border:1.5px solid var(--rojo)}
+.nota-box.vacia{background:#f1ede6;color:var(--gris)}
+.fecha-chip{font-size:.75rem;color:var(--gris)}
+
+/* Agenda de entregas */
+.entrega{display:flex;gap:14px;padding:13px 16px;border:1px solid var(--linea);
+  border-radius:12px;background:#fff;margin-bottom:10px;align-items:center}
+.entrega .cal{width:52px;text-align:center;flex:none}
+.entrega .cal .dia{font-size:1.3rem;font-weight:700;line-height:1}
+.entrega .cal .mes{font-size:.72rem;text-transform:uppercase;color:var(--gris);font-weight:600}
+.entrega.vencida{border-color:#f0c8c8;background:#fdf6f5}
+.entrega.hoy{border-color:var(--rojo);background:var(--rojo-suave)}
+.entrega .materia-tag{font-size:.74rem;font-weight:600;color:var(--rojo-osc)}
+.entrega .tit{font-weight:600;font-size:.93rem}
+.entrega .est{margin-left:auto;flex:none}
+
+/* Estados varios */
+.vacio{text-align:center;color:var(--gris);padding:48px 20px;font-size:.95rem}
+.cargando{text-align:center;color:var(--gris);padding:40px}
+.aviso{border-left:3px solid var(--rojo);background:var(--rojo-suave);
+  padding:12px 16px;border-radius:8px;font-size:.88rem;margin-bottom:16px}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--gris);
+  padding:10px 2px}
+.leyenda b{color:var(--tinta)}
+
+/* Modal simple */
+.modal-fondo{position:fixed;inset:0;background:rgba(31,27,24,.5);z-index:50;
+  display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.modal-fondo{align-items:center}}
+.modal{background:var(--papel);width:100%;max-width:520px;border-radius:20px 20px 0 0;
+  padding:24px;max-height:88vh;overflow-y:auto}
+@media(min-width:640px){.modal{border-radius:20px}}
+.modal h3{margin-bottom:16px;font-size:1.2rem}
+.modal .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.fila-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.fila-form{grid-template-columns:1fr}}
