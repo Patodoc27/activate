@@ -85,8 +85,8 @@
   function renderLogin() {
     app.innerHTML =
       '<div class="login-wrap">'
-      + '<div class="login-hero">' + escudoIMG
-      + '<h1>' + esc(cfg.APP_NAME) + '</h1>'
+      + '<div class="login-hero"><div class="marca-row">' + escudoIMG
+      + '<h1>' + esc(cfg.APP_NAME) + '</h1></div>'
       + '<div class="escuela">' + esc(cfg.SCHOOL_NAME) + '</div>'
       + '<div class="tagline">Las notas del colegio, al día. Docentes cargan, familias y estudiantes miran — todo en el mismo lugar.</div>'
       + '<div class="login-feats">'
@@ -159,8 +159,7 @@
   function renderShell(account, viewEl, curso) {
     app.innerHTML =
       '<div class="topbar">' + escudoIMG
-      + '<div><div class="marca">' + esc(cfg.APP_NAME) + '</div>'
-      + '<div class="sub">' + esc(cfg.SCHOOL_NAME) + '</div></div>'
+      + '<div class="marca">' + esc(cfg.APP_NAME) + '</div>'
       + '<div class="spacer"></div>'
       + (curso ? '<button class="btn-curso" id="btn-curso" title="Cambiar curso">' + esc(curso.name) + '</button>' : '')
       + '<span class="chip-rol">' + esc(account.role === 'direccion' ? 'Dirección'

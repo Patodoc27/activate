@@ -39,11 +39,11 @@ a{color:var(--rojo)}
   border:1.5px solid rgba(255,255,255,.14);border-radius:50%}
 .login-hero::after{content:'';position:absolute;top:-100px;right:-80px;width:340px;height:340px;
   border:1.5px solid rgba(255,255,255,.09);border-radius:50%}
-.login-hero .escudo-img{width:92px;height:92px;border-radius:50%;
-  box-shadow:0 8px 28px rgba(0,0,0,.32),0 0 0 7px rgba(255,255,255,.12),0 0 0 14px rgba(255,255,255,.05);
-  position:relative;z-index:1}
-.login-hero h1{font-size:2.35rem;letter-spacing:.01em;margin:18px 0 4px;position:relative;z-index:1}
-.login-hero .escuela{font-size:.82rem;opacity:.85;font-weight:700;text-transform:uppercase;letter-spacing:.14em}
+.login-hero .marca-row{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
+.login-hero .escudo-img{width:84px;height:84px;border-radius:50%;flex:none;
+  box-shadow:0 8px 28px rgba(0,0,0,.32),0 0 0 7px rgba(255,255,255,.12),0 0 0 14px rgba(255,255,255,.05)}
+.login-hero h1{font-size:2.5rem;letter-spacing:.01em;margin:0;position:relative;z-index:1}
+.login-hero .escuela{font-size:.82rem;opacity:.85;font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-top:16px;position:relative;z-index:1}
 .login-hero .escuela::after{content:'';display:block;width:42px;height:2px;background:rgba(255,255,255,.55);margin-top:10px;border-radius:2px}
 .login-hero .tagline{font-size:.92rem;opacity:.88;margin-top:14px;max-width:360px;line-height:1.5;position:relative;z-index:1}
 .login-feats{display:flex;flex-direction:column;gap:10px;margin-top:22px;position:relative;z-index:1}
@@ -60,8 +60,9 @@ a{color:var(--rojo)}
   .login-wrap{flex-direction:row}
   .login-hero{flex:1.05;display:flex;flex-direction:column;justify-content:center;
     padding:56px 60px;min-height:100vh}
-  .login-hero .escudo-img{width:150px;height:150px}
-  .login-hero h1{font-size:2.8rem}
+  .login-hero .marca-row{gap:26px}
+  .login-hero .escudo-img{width:130px;height:130px}
+  .login-hero h1{font-size:3rem}
   .login-feats .feat{font-size:.92rem;padding:13px 18px}
   .login-body{flex:1;align-items:center;padding:40px}
   .login-card{margin-top:0;max-width:460px}
