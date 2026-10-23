@@ -22,23 +22,25 @@ window.Views.estudiante = function (view, ctx) {
           (rs[1].data || []).forEach(function (t) { terms[t.id] = t; });
           var mids = materias.map(function (m) { return m.id; });
           Promise.all([
-            sb.from('activities').select('id,subject_id,term_id,title,description,due_date')
+            sb.from('activities').select('id,subject_id,term_id,title,description,due_date,weight')
               .in('subject_id', mids).order('due_date', { ascending: true }),
             sb.from('grades').select('activity_id,value,status').eq('student_id', state.me.id),
-            sb.from('final_grades').select('subject_id,value').eq('student_id', state.me.id)
+            sb.from('final_grades').select('subject_id,value').eq('student_id', state.me.id),
+            sb.from('term_grades').select('subject_id,term_id,value').eq('student_id', state.me.id)
           ]).then(function (r2) {
-            dibujar(materias, terms, r2[0].data || [], r2[1].data || [], r2[2].data || []);
+            dibujar(materias, terms, r2[0].data || [], r2[1].data || [], r2[2].data || [], r2[3].data || []);
           });
         });
       });
   }
 
-  function dibujar(materias, terms, acts, grades, finals) {
+  function dibujar(materias, terms, acts, grades, finals, termg) {
     var mname = {};
     materias.forEach(function (m) { mname[m.id] = m.short_name || m.name; });
-    var gmap = {}, fmap = {};
+    var gmap = {}, fmap = {}, tmap = {};
     grades.forEach(function (g) { gmap[g.activity_id] = g; });
     finals.forEach(function (f) { fmap[f.subject_id] = f.value; });
+    termg.forEach(function (t) { tmap[t.subject_id + '_' + t.term_id] = t.value; });
     var hoy = A.hoy();
 
     var prox = [], vencidas = [], calif = [];
@@ -66,6 +68,7 @@ window.Views.estudiante = function (view, ctx) {
         + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
         + '</div></div><div class="info"><div class="materia-tag">' + esc(mname[a.subject_id] || '')
         + '</div><div class="tit">' + esc(a.title) + '</div>'
+        + (a.weight != null ? '<div class="meta">peso ' + a.weight + '%</div>' : '')
         + (a.description ? '<div class="meta">' + esc(a.description) + '</div>' : '')
         + '</div>' + A.chipDias(a.due_date) + '</div>';
     });
@@ -86,11 +89,22 @@ window.Views.estudiante = function (view, ctx) {
       calif.forEach(function (a) { (porMat[a.subject_id] = porMat[a.subject_id] || []).push(a); });
       Object.keys(porMat).forEach(function (mid) {
         html += '<div class="card" style="margin-bottom:10px"><div class="materia-tag" style="font-size:.85rem">'
-          + esc(mname[mid] || '') + (fmap[mid] != null ? ' <span class="chip final">Final ' + fmap[mid] + '</span>' : '') + '</div>';
+          + esc(mname[mid] || '')
+          + (function () {
+              var tids = Object.keys(terms).map(Number);
+              var chips = '';
+              tids.forEach(function (tid) {
+                var tv = tmap[mid + '_' + tid];
+                if (tv != null) chips += ' <span class="chip final">' + esc(terms[tid].name.replace('trimestre','T')) + ' ' + tv + '</span>';
+              });
+              return chips;
+            })()
+          + (fmap[mid] != null ? ' <span class="chip final">Final ' + fmap[mid] + '</span>' : '') + '</div>';
         porMat[mid].forEach(function (a) {
           var g = gmap[a.id];
           html += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(a.title) + '</div>'
-            + '<div class="meta">' + (a.due_date ? A.fmtFecha(a.due_date) : '') + '</div></div>'
+            + '<div class="meta">' + (a.weight != null ? 'peso ' + a.weight + '% · ' : '')
+            + (a.due_date ? A.fmtFecha(a.due_date) : '') + '</div></div>'
             + '<div class="nota-box' + (g.value <= 5 ? ' alerta' : '') + '">' + g.value + '</div></div>';
         });
         html += '</div>';
@@ -102,6 +116,7 @@ window.Views.estudiante = function (view, ctx) {
   sb.channel('estudiante-' + ctx.user.id)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'grades' }, function () { if (state.me) cargar(); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, function () { if (state.me) cargar(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'term_grades' }, function () { if (state.me) cargar(); })
     .subscribe();
 
   cargar();

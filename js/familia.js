@@ -14,8 +14,16 @@ window.Views.familia = function (view, ctx) {
             + 'Avisá a dirección para recibir tu código de invitación.</div>';
           return;
         }
-        state.hijos = r.data.map(function (x) { return x.students; });
-        if (!state.hijo) state.hijo = state.hijos[0].id;
+        var todos = r.data.map(function (x) { return x.students; });
+        state.hijos = ctx.course ? todos.filter(function (s) { return s.course_id === ctx.course.id; }) : todos;
+        if (!state.hijos.length) {
+          view.innerHTML = '<div class="vacio">' + A.icon('libro')
+            + 'Ningún estudiante vinculado está en ' + esc(ctx.course.name) + '.<br>'
+            + 'Tocá el nombre del curso arriba para cambiar.</div>';
+          return;
+        }
+        if (!state.hijos.filter(function (h) { return h.id === state.hijo; }).length)
+          state.hijo = state.hijos[0].id;
         cargarHijo();
       });
   }
@@ -36,18 +44,20 @@ window.Views.familia = function (view, ctx) {
       var mids = materias.map(function (m) { return m.id; });
       if (!mids.length) { state.data = { materias: [], acts: {}, grades: {}, finals: {}, terms: {}, termsList: [] }; dibujar(); return; }
       Promise.all([
-        sb.from('activities').select('id,subject_id,term_id,title,description,due_date')
+        sb.from('activities').select('id,subject_id,term_id,title,description,due_date,weight')
           .in('subject_id', mids).order('due_date', { ascending: true }),
         sb.from('grades').select('activity_id,value,status').eq('student_id', sid),
-        sb.from('final_grades').select('subject_id,value').eq('student_id', sid)
+        sb.from('final_grades').select('subject_id,value').eq('student_id', sid),
+        sb.from('term_grades').select('subject_id,term_id,value,computed').eq('student_id', sid)
       ]).then(function (r2) {
-        var acts = {}, grades = {}, finals = {};
+        var acts = {}, grades = {}, finals = {}, termg = {};
         (r2[0].data || []).forEach(function (a) {
           (acts[a.subject_id] = acts[a.subject_id] || []).push(a);
         });
         (r2[1].data || []).forEach(function (g) { grades[g.activity_id] = g; });
         (r2[2].data || []).forEach(function (f) { finals[f.subject_id] = f.value; });
-        state.data = { materias: materias, acts: acts, grades: grades, finals: finals, terms: terms, termsList: termsList };
+        (r2[3].data || []).forEach(function (t) { termg[t.subject_id + '_' + t.term_id] = t.value; });
+        state.data = { materias: materias, acts: acts, grades: grades, finals: finals, termg: termg, terms: terms, termsList: termsList };
         dibujar();
       });
     });
@@ -134,7 +144,8 @@ window.Views.familia = function (view, ctx) {
     d.materias.forEach(function (m) {
       var acts = (d.acts[m.id] || []).filter(function (a) { return state.term === 0 || a.term_id === state.term; });
       var todas = d.acts[m.id] || [];
-      if (state.term !== 0 && !acts.length) return; // ocultar materias sin actividades del trimestre
+      var tg = state.term !== 0 ? d.termg[m.id + '_' + state.term] : null;
+      if (state.term !== 0 && !acts.length && tg == null) return; // ocultar materias sin actividades del trimestre
       var det = document.createElement('details');
       det.className = 'materia';
       var conNota = acts.filter(function (a) { var g = d.grades[a.id]; return g && g.status === 'calificada'; }).length;
@@ -142,6 +153,7 @@ window.Views.familia = function (view, ctx) {
       var bajas = acts.some(function (a) { var g = d.grades[a.id]; return g && g.status === 'calificada' && g.value != null && g.value <= 5; });
       var chips = '';
       if (d.finals[m.id] != null) chips += '<span class="chip final">Final ' + d.finals[m.id] + '</span>';
+      if (tg != null) chips += '<span class="chip final">Trimestre ' + tg + '</span>';
       if (conNota) chips += '<span class="chip">' + conNota + ' calificada' + (conNota > 1 ? 's' : '') + '</span>';
       if (noPres) chips += '<span class="chip aviso">' + noPres + ' no presentada' + (noPres > 1 ? 's' : '') + '</span>';
       var cuerpo = '';
@@ -155,6 +167,7 @@ window.Views.familia = function (view, ctx) {
         var tname = d.terms[a.term_id] ? d.terms[a.term_id].name : '';
         cuerpo += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(a.title) + '</div>'
           + '<div class="meta">' + esc(tname)
+          + (a.weight != null ? ' · peso ' + a.weight + '%' : '')
           + (a.due_date ? ' · entrega ' + A.fmtFecha(a.due_date)
           + (A.textoDias(a.due_date) ? ' (' + A.textoDias(a.due_date) + ')' : '') : '') + '</div></div>'
           + '<div class="' + cl + '">' + nota + '<small>' + esc(A.notaDetalle(g).toUpperCase().slice(0, 9)) + '</small></div></div>';
@@ -173,6 +186,7 @@ window.Views.familia = function (view, ctx) {
   sb.channel('familia-' + ctx.user.id)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'grades' }, function () { if (state.hijo) cargarHijo(); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, function () { if (state.hijo) cargarHijo(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'term_grades' }, function () { if (state.hijo) cargarHijo(); })
     .subscribe();
 
   cargar();

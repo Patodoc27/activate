@@ -122,13 +122,47 @@
     });
   }
 
+  /* ---------- Selector de curso (2ª pantalla del acceso) ---------- */
+  var ROL_ELIGE_CURSO = { docente: 1, familia: 1 };
+
+  function cursoGuardado(userId) {
+    try { return Number(sessionStorage.getItem('curso-' + userId)) || null; }
+    catch (e) { return null; }
+  }
+
+  function pickCourse(account, user, cb) {
+    sb.from('courses').select('id,name,sort').order('sort', { ascending: true })
+      .then(function (r) {
+        var cursos = r.data || [];
+        var html = '<div class="pick-wrap"><div class="pick-head">' + escudoIMG
+          + '<h2>¿Qué curso?</h2>'
+          + '<div class="sub">Elegí el curso para ver sus materias y estudiantes — ' + esc(account.role === 'docente' ? 'así te quedan solo tus materias de esa división' : 'así ves a tu hijo aunque haya otro con el mismo nombre en otro curso') + '</div></div>'
+          + '<div class="pick-grid" id="grid"></div>'
+          + '<div class="pick-pie"><button class="btn-salir" id="pick-salir" style="color:var(--tinta);border-color:var(--linea-fuerte)">Salir</button></div></div>';
+        app.innerHTML = html;
+        document.getElementById('pick-salir').addEventListener('click', function () { sb.auth.signOut(); });
+        var grid = document.getElementById('grid');
+        cursos.forEach(function (c) {
+          var b = el('button', 'pick-btn');
+          var p = c.name.split(' ');
+          b.innerHTML = '<span class="anio">' + esc(p[0]) + '</span><span class="div">' + esc(p.slice(1).join(' ')) + '</span>';
+          b.addEventListener('click', function () {
+            try { sessionStorage.setItem('curso-' + user.id, String(c.id)); } catch (e) {}
+            cb(c);
+          });
+          grid.appendChild(b);
+        });
+      });
+  }
+
   /* ---------- Marco con topbar ---------- */
-  function renderShell(account, viewEl) {
+  function renderShell(account, viewEl, curso) {
     app.innerHTML =
       '<div class="topbar">' + escudoIMG
       + '<div><div class="marca">' + esc(cfg.APP_NAME) + '</div>'
       + '<div class="sub">' + esc(cfg.SCHOOL_NAME) + '</div></div>'
       + '<div class="spacer"></div>'
+      + (curso ? '<button class="btn-curso" id="btn-curso" title="Cambiar curso">' + esc(curso.name) + '</button>' : '')
       + '<span class="chip-rol">' + esc(account.role === 'direccion' ? 'Dirección'
           : account.role.charAt(0).toUpperCase() + account.role.slice(1)) + '</span>'
       + '<button class="btn-salir" id="salir">Salir</button></div>'
@@ -140,6 +174,21 @@
   }
 
   /* ---------- Arranque ---------- */
+  function entrar(account, user, curso) {
+    var view = el('div');
+    view.innerHTML = '<div class="cargando">Cargando…</div>';
+    renderShell(account, view, curso);
+    var ctx = { account: account, user: user, course: curso };
+    if (curso) {
+      document.getElementById('btn-curso').addEventListener('click', function () {
+        try { sessionStorage.removeItem('curso-' + user.id); } catch (e) {}
+        pickCourse(account, user, function (c) { entrar(account, user, c); });
+      });
+    }
+    var fn = Views[account.role] || Views.familia;
+    fn(view, ctx);
+  }
+
   function loadAndRender(session) {
     if (!session) { renderLogin(); return; }
     sb.from('accounts').select('id,role,full_name,school_id').eq('id', session.user.id).single()
@@ -149,11 +198,19 @@
           return;
         }
         var account = r.data;
-        var view = el('div');
-        view.innerHTML = '<div class="cargando">Cargando…</div>';
-        renderShell(account, view);
-        var fn = Views[account.role] || Views.familia;
-        fn(view, { account: account, user: session.user });
+        if (ROL_ELIGE_CURSO[account.role]) {
+          var cid = cursoGuardado(session.user.id);
+          if (cid) {
+            sb.from('courses').select('id,name').eq('id', cid).single().then(function (rc) {
+              if (rc.data) { entrar(account, session.user, rc.data); return; }
+              pickCourse(account, session.user, function (c) { entrar(account, session.user, c); });
+            });
+          } else {
+            pickCourse(account, session.user, function (c) { entrar(account, session.user, c); });
+          }
+        } else {
+          entrar(account, session.user, null);
+        }
       });
   }
 

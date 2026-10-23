@@ -254,3 +254,33 @@ details.materia.alerta{border-left:4px solid var(--rojo)}
 .modal .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
 .fila-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:520px){.fila-form{grid-template-columns:1fr}}
+
+/* ---------- Selector de curso ---------- */
+.pick-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:28px 20px 60px;
+  background:radial-gradient(900px 500px at 50% -160px, rgba(172,54,54,.12), transparent), var(--crema)}
+.pick-head{text-align:center;margin-bottom:26px}
+.pick-head .escudo-img{width:84px;height:84px;border-radius:50%;box-shadow:var(--sombra-alta)}
+.pick-head h2{font-size:1.8rem;margin:14px 0 6px}
+.pick-head .sub{color:var(--gris);font-size:.9rem;max-width:420px;margin:0 auto}
+.pick-grid{display:grid;grid-template-columns:repeat(2,minmax(130px,170px));gap:12px;width:100%;max-width:400px}
+@media(min-width:760px){.pick-grid{grid-template-columns:repeat(5,minmax(120px,150px));max-width:820px}}
+.pick-btn{background:var(--papel);border:1.5px solid var(--linea-fuerte);border-radius:16px;
+  padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;
+  box-shadow:var(--sombra);transition:border-color .15s,transform .1s,background .15s}
+.pick-btn:hover{border-color:var(--rojo);background:var(--rojo-suave);transform:translateY(-2px)}
+.pick-btn:active{transform:scale(.97)}
+.pick-btn .anio{font-family:Georgia,serif;font-weight:800;font-size:1.7rem;line-height:1;color:var(--rojo-osc)}
+.pick-btn .div{font-size:.8rem;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.06em}
+.pick-pie{margin-top:26px}
+.btn-curso{background:var(--rojo);color:#fff;border:none;border-radius:99px;
+  font-size:.82rem;font-weight:700;padding:7px 14px;letter-spacing:.03em;white-space:nowrap}
+.btn-curso:hover{background:var(--rojo-osc)}
+
+/* Buscador de alumno */
+.buscar{display:flex;align-items:center;gap:8px;border:1.5px solid var(--linea-fuerte);
+  border-radius:99px;background:#fff;padding:0 14px}
+.buscar svg{width:15px;height:15px;color:var(--gris);flex:none}
+.buscar input{border:none;outline:none;padding:10px 0;font-size:.9rem;width:150px;background:transparent}
+tr.oculta{display:none}
+@media(max-width:600px){.buscar input{width:100px}}
