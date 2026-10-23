@@ -311,3 +311,14 @@ tr.oculta{display:none}
 .btn-nav:hover{border-color:var(--rojo);color:var(--rojo);background:var(--rojo-suave)}
 .btn-nav:active{transform:scale(.94)}
 .planilla-wrap{-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+
+/* Carga de notas por actividad (modal) y validación */
+.fila-act .nf-est{padding:7px 4px;border:1.5px solid var(--linea);border-radius:9px;
+  background:var(--papel);font-size:.78rem;max-width:82px}
+.fila-act .nf-nota{width:64px;text-align:center;padding:9px 6px;border:1.5px solid var(--linea-fuerte);
+  border-radius:10px;font-size:1.02rem;font-weight:700;background:var(--papel)}
+.fila-act .nf-nota:disabled{opacity:.4}
+input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
+  animation:sacudir .3s}
+@keyframes sacudir{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){input.nota.invalida{animation:none}}

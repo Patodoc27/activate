@@ -116,7 +116,7 @@ window.Views.docente = function (view, ctx) {
 
     view.innerHTML =
       '<div class="seccion-titulo"><h2>Mis materias</h2>'
-      + '<span class="nota">Tocá el título de una actividad para editarla; la nota se guarda sola al escribirla</span></div>'
+      + '<span class="nota">Tocá una actividad para cargar las notas de sus estudiantes; los pesos se asignan al cerrar el trimestre</span></div>'
       + '<div class="pills" id="pills"></div>'
       + '<div class="toolbar"><div class="pills grupo" id="pillsT" style="margin:0"></div><div class="spacer"></div>'
       + '<div class="nav-tabla"><button class="btn-nav" id="navIzq" aria-label="Columnas anteriores">‹</button>'
@@ -204,6 +204,7 @@ window.Views.docente = function (view, ctx) {
     });
     html += '</tbody></table></div>'
       + '<div class="savebar"><span class="pendientes" id="pend"></span><div class="spacer"></div>'
+      + '<button class="btn btn-ghost btn-mini" id="pesos">Pesos %</button>'
       + '<button class="btn btn-ghost btn-mini" id="habilitar">Habilitar trimestre</button>'
       + '<button class="btn" id="guardar">Guardar</button></div>';
     tabla.innerHTML = html;
@@ -213,7 +214,7 @@ window.Views.docente = function (view, ctx) {
     tabla.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function () {
         var a = state.activities.filter(function (x) { return x.id === Number(b.getAttribute('data-edit')); })[0];
-        if (a) modalActividad(a);
+        if (a) modalNotas(a);
       });
     });
 
@@ -242,6 +243,142 @@ window.Views.docente = function (view, ctx) {
     });
     view.querySelector('#guardar').addEventListener('click', guardar);
     view.querySelector('#habilitar').addEventListener('click', modalHabilitar);
+    view.querySelector('#pesos').addEventListener('click', modalPesos);
+  }
+
+  /* Carga de notas de una actividad: lista de estudiantes, un recuadro 1-10 (solo .5) */
+  function modalNotas(act) {
+    var fondo = el('div', 'modal-fondo');
+    var filas = '';
+    state.students.forEach(function (s) {
+      var g = state.grades[act.id + '_' + s.id];
+      var st = g ? g.status : 'sin_calificar';
+      var v = g && g.status === 'calificada' && g.value != null ? g.value : '';
+      filas += '<div class="fila-act" data-sid="' + s.id + '"><div class="info"><div class="titulo">'
+        + esc(s.last_name) + ', ' + esc(s.first_name) + '</div></div>'
+        + '<select class="estado nf-est">'
+        + opt('sin_calificar', '—', st) + opt('pendiente', 'Pend.', st)
+        + opt('no_presentado', 'No pres.', st) + opt('calificada', 'Nota', st) + '</select>'
+        + '<input class="nota nf-nota" type="number" min="1" max="10" step="0.5" inputmode="decimal"'
+        + ' placeholder="1-10" value="' + v + '"' + (st === 'calificada' ? '' : ' disabled') + '></div>';
+    });
+    fondo.innerHTML =
+      '<div class="modal"><h3>' + esc(tipoActividad(act) + act.title) + '</h3>'
+      + '<div class="aviso info">' + A.icon('lapiz') + '<div>Notas del <b>1 al 10</b> en pasos de medio punto '
+      + '(7, 7.5, 8…). Pendiente y No presentado se eligen en la lista de cada estudiante.</div></div>'
+      + '<div style="max-height:52vh;overflow-y:auto">' + filas + '</div>'
+      + '<div class="aviso" id="mn-msg" style="display:none"></div>'
+      + '<div class="acciones"><button class="btn-ghost btn" id="mn-editar">Editar actividad</button>'
+      + '<button class="btn" id="mn-listo">Listo</button></div></div>';
+    document.body.appendChild(fondo);
+    function cerrar() { fondo.remove(); cargarMateria(); }
+    fondo.querySelector('#mn-listo').addEventListener('click', cerrar);
+    fondo.addEventListener('click', function (e) { if (e.target === fondo) cerrar(); });
+    fondo.querySelector('#mn-editar').addEventListener('click', function () {
+      fondo.remove(); modalActividad(act);
+    });
+    var timer = null;
+    function aviso(txt, mal) {
+      var m = fondo.querySelector('#mn-msg');
+      m.style.display = txt ? '' : 'none';
+      m.className = 'aviso' + (mal ? ' alerta' : ' info');
+      m.textContent = txt;
+    }
+    function notaOk(v) { var n = Number(v); return v !== '' && n >= 1 && n <= 10 && (n * 2) % 1 === 0; }
+    function guardarFila(fila) {
+      var sid = Number(fila.getAttribute('data-sid'));
+      var sel = fila.querySelector('select'), inp = fila.querySelector('input');
+      var st = sel.value, val = null;
+      if (st === 'calificada') {
+        if (inp.value === '') { st = 'sin_calificar'; }
+        else if (!notaOk(inp.value)) { inp.classList.add('invalida'); aviso('La nota va del 1 al 10, en medios puntos (ej. 7.5).', true); return; }
+        else val = Number(inp.value);
+      } else if (st === 'pendiente') { val = 0; inp.value = ''; }
+      else if (st === 'no_presentado') { val = 1; inp.value = ''; }
+      else { inp.value = ''; }
+      inp.classList.remove('invalida');
+      inp.disabled = st !== 'calificada';
+      aviso('Guardando…');
+      sb.from('grades').upsert({ activity_id: act.id, student_id: sid, value: val, status: st, updated_by: ctx.user.id },
+        { onConflict: 'activity_id,student_id' }).then(function (r) {
+          if (r.error) { aviso('Error: ' + r.error.message, true); return; }
+          state.grades[act.id + '_' + sid] = { activity_id: act.id, student_id: sid, value: val, status: st };
+          aviso('Guardado');
+          clearTimeout(timer);
+          timer = setTimeout(function () { aviso(''); }, 1200);
+        });
+    }
+    fondo.querySelectorAll('.fila-act').forEach(function (fila) {
+      var sel = fila.querySelector('select'), inp = fila.querySelector('input');
+      sel.addEventListener('change', function () {
+        inp.disabled = sel.value !== 'calificada';
+        if (sel.value === 'calificada') { inp.focus(); if (!notaOk(inp.value)) return; }
+        guardarFila(fila);
+      });
+      inp.addEventListener('change', function () { guardarFila(fila); });
+    });
+  }
+
+  /* Panel de pesos: todas las actividades del trimestre con su % al lado */
+  function modalPesos() {
+    var acts = actsDelTerm();
+    var fondo = el('div', 'modal-fondo');
+    var filas = acts.map(function (a) {
+      return '<div class="fila-act"><div class="info"><div class="titulo">' + esc(tipoActividad(a) + a.title) + '</div>'
+        + '<div class="meta">' + (a.due_date ? A.fmtFecha(a.due_date) : 'sin plazo') + '</div></div>'
+        + '<input class="nota" style="width:70px;text-align:center;padding:8px;border:1.5px solid var(--linea);border-radius:8px;font-weight:700"'
+        + ' type="number" min="0" max="100" step="1" inputmode="numeric" data-peso="' + a.id + '"'
+        + ' placeholder="%" value="' + (a.weight != null ? a.weight : '') + '"></div>';
+    }).join('');
+    fondo.innerHTML =
+      '<div class="modal"><h3>Pesos del trimestre</h3>'
+      + '<div class="aviso info">' + A.icon('lapiz') + '<div>Asigná el <b>%</b> de cada actividad. '
+      + 'La suma no puede pasar de 100%. Llevás <b id="mp-total">' + pesoTotal() + '%</b>.</div></div>'
+      + (acts.length ? '<div style="max-height:46vh;overflow-y:auto">' + filas + '</div>'
+        : '<div class="vacio">No hay actividades en este trimestre.</div>')
+      + '<div class="acciones"><button class="btn-ghost btn" id="mp-cancel">Cancelar</button>'
+      + '<button class="btn" id="mp-ok">Guardar pesos</button></div></div>';
+    document.body.appendChild(fondo);
+    fondo.querySelector('#mp-cancel').addEventListener('click', function () { fondo.remove(); });
+    fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
+    var orig = {};
+    acts.forEach(function (a) { orig[a.id] = a.weight != null ? Number(a.weight) : null; });
+    function totalActual() {
+      var t = 0;
+      fondo.querySelectorAll('input[data-peso]').forEach(function (i) { t += Number(i.value) || 0; });
+      return t;
+    }
+    fondo.addEventListener('input', function () {
+      var t = totalActual();
+      var span = fondo.querySelector('#mp-total');
+      span.textContent = t + '%';
+      span.parentElement.parentElement.classList.toggle('alerta', t > 100);
+      span.parentElement.innerHTML = 'La suma no puede pasar de 100%. Llevás <b id="mp-total">' + t + '%</b>' + (t > 100 ? ' — <b>supera el 100%</b>' : '.');
+    });
+    fondo.querySelector('#mp-ok').addEventListener('click', function () {
+      var t = totalActual();
+      if (t > 100) { avisoPesos(fondo, 'La suma es ' + t + '%: supera el 100%. Bajá algún peso.'); return; }
+      var cambios = [];
+      fondo.querySelectorAll('input[data-peso]').forEach(function (i) {
+        var id = Number(i.getAttribute('data-peso'));
+        var v = i.value === '' ? null : Number(i.value);
+        if (v !== orig[id]) cambios.push({ id: id, weight: v });
+      });
+      if (!cambios.length) { fondo.remove(); return; }
+      var btn = fondo.querySelector('#mp-ok'); btn.disabled = true; btn.textContent = 'Guardando…';
+      Promise.all(cambios.map(function (c) {
+        return sb.from('activities').update({ weight: c.weight }).eq('id', c.id);
+      })).then(function (rs) {
+        var err = rs.map(function (r) { return r.error; }).filter(Boolean)[0];
+        fondo.remove();
+        if (err) alert('No se pudieron guardar: ' + err.message);
+        else cargarMateria();
+      });
+    });
+    function avisoPesos(f, txt) {
+      var m = f.querySelector('.aviso');
+      if (m) { m.classList.add('alerta'); m.querySelector('div').innerHTML = esc(txt); }
+    }
   }
 
   function siguienteCelda(td) {
@@ -382,10 +519,7 @@ window.Views.docente = function (view, ctx) {
       + '</select></div>'
       + '<div class="campo"><label>Tema o nombre</label><input id="m-tit" placeholder="ej. Fracciones, capítulo 3" value="' + esc(act ? act.title : '') + '"></div>'
       + '<div class="campo"><label>Descripción (opcional)</label><input id="m-des" placeholder="Qué hay que entregar" value="' + esc(act ? (act.description || '') : '') + '"></div>'
-      + '<div class="fila-form">'
-      + '<div class="campo"><label>Peso % del trimestre</label><input id="m-peso" type="number" min="0" max="100" step="5" inputmode="numeric" placeholder="ej. 30" value="' + (act && act.weight != null ? act.weight : '') + '">'
-      + '<div style="font-size:.76rem;color:var(--gris);margin-top:4px">Llevás <b id="m-peso-total">' + pesoTotal() + '%</b> asignado; no puede superar 100%.</div></div>'
-      + '<div class="campo"><label>Plazo máximo de entrega</label><input id="m-fec" type="date" value="' + (act && act.due_date ? act.due_date : '') + '"></div></div>'
+      + '<div class="campo"><label>Plazo máximo de entrega</label><input id="m-fec" type="date" value="' + (act && act.due_date ? act.due_date : '') + '"></div>'
       + '<div class="campo"><label>Trimestre</label><select id="m-term">'
       + state.terms.map(function (t) { return '<option value="' + t.id + '"' + (t.id === (act ? act.term_id : state.term) ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('')
       + '</select></div>'
@@ -394,11 +528,6 @@ window.Views.docente = function (view, ctx) {
       + '<button class="btn-ghost btn" id="m-cancel">Cancelar</button>'
       + '<button class="btn" id="m-ok">' + (esEdicion ? 'Guardar' : 'Crear actividad') + '</button></div></div>';
     document.body.appendChild(fondo);
-    var pesoInp = fondo.querySelector('#m-peso');
-    var pesoAnt = act && act.weight != null ? Number(act.weight) : 0;
-    pesoInp.addEventListener('input', function () {
-      fondo.querySelector('#m-peso-total').textContent = (pesoTotal() - pesoAnt + (Number(pesoInp.value) || 0)) + '%';
-    });
     fondo.querySelector('#m-cancel').addEventListener('click', function () { fondo.remove(); });
     fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
     if (esEdicion) fondo.querySelector('#m-del').addEventListener('click', function () {
@@ -414,19 +543,13 @@ window.Views.docente = function (view, ctx) {
     fondo.querySelector('#m-ok').addEventListener('click', function () {
       var tit = fondo.querySelector('#m-tit').value.trim();
       if (!tit) { fondo.querySelector('#m-tit').focus(); return; }
-      var peso = pesoInp.value === '' ? null : Number(pesoInp.value);
-      var nuevoTotal = pesoTotal() - pesoAnt + (peso || 0);
-      if (nuevoTotal > 100) {
-        fondo.querySelector('#m-peso-total').textContent = nuevoTotal + '% — supera el 100%';
-        pesoInp.focus();
-        return;
-      }
       var btn = fondo.querySelector('#m-ok'); btn.disabled = true; btn.textContent = 'Guardando…';
       var datos = {
         subject_id: idsMateria()[0], term_id: Number(fondo.querySelector('#m-term').value),
         kind: fondo.querySelector('#m-tipo').value,
         title: tit, description: fondo.querySelector('#m-des').value.trim() || null,
-        due_date: fondo.querySelector('#m-fec').value || null, weight: peso
+        due_date: fondo.querySelector('#m-fec').value || null,
+        weight: esEdicion ? act.weight : null
       };
       var pedido = esEdicion
         ? sb.from('activities').update(datos).eq('id', act.id)
