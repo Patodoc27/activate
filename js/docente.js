@@ -165,7 +165,7 @@ window.Views.docente = function (view, ctx) {
     if (!acts.length) {
       tabla.innerHTML = '<div class="vacio">' + A.icon('calendario') + 'Todavía no hay actividades en este trimestre.<br>Creá la primera con "+ Nueva actividad".</div>'
         + '<div class="savebar"><div class="spacer"></div>'
-        + '<button class="btn btn-ghost btn-mini" id="excel">Descargar Excel</button>'
+        + '<button class="btn btn-ghost btn-mini" id="excel">Excel</button>'
         + '<button class="btn btn-ghost btn-mini" id="imprimir">Imprimir</button></div>';
       view.querySelector('#imprimir').addEventListener('click', imprimir);
       view.querySelector('#excel').addEventListener('click', descargarExcel);
@@ -209,7 +209,7 @@ window.Views.docente = function (view, ctx) {
     });
     html += '</tbody></table></div>'
       + '<div class="savebar"><span class="pendientes" id="pend"></span><div class="spacer"></div>'
-      + '<button class="btn btn-ghost btn-mini" id="excel">Descargar Excel</button>'
+      + '<button class="btn btn-ghost btn-mini" id="excel">Excel</button>'
       + '<button class="btn btn-ghost btn-mini" id="imprimir">Imprimir</button>'
       + '<button class="btn btn-ghost btn-mini" id="pesos">Pesos %</button>'
       + '<button class="btn btn-ghost btn-mini" id="habilitar">Habilitar trimestre</button>'
@@ -515,7 +515,13 @@ window.Views.docente = function (view, ctx) {
   }
   function tipoActividad(a) {
     var t = a && a.kind ? nombreTipo(a.kind) : '';
-    if (!t || (a.title || '').toLowerCase().indexOf(t.toLowerCase()) === 0) return '';
+    if (!t) return '';
+    var tit = (a.title || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    var claves = { eval: ['evaluac', 'examen', 'prueba'], oral: ['oral', 'coloquio'],
+      tp: ['trabajo', 'practico', 'tp'], cuest: ['cuestionario'], juego: ['juego'],
+      agust: ['agust', 'perfil'], part: ['particip'], carp: ['carpeta'],
+      proy: ['proyect', 'integrador'], otro: [] }[a.kind] || [];
+    for (var i = 0; i < claves.length; i++) if (tit.indexOf(claves[i]) !== -1) return '';
     return t + ' · ';
   }
 

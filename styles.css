@@ -142,7 +142,7 @@ a{color:var(--rojo)}
 .planilla th,.planilla td{padding:10px 12px;border-bottom:1px solid var(--linea);
   text-align:left;font-size:.92rem;vertical-align:middle}
 .planilla thead th{background:var(--tinta);color:#f5efe6;font-weight:600;
-  position:sticky;top:62px;font-size:.8rem;z-index:5}
+  position:sticky;top:0;font-size:.8rem;z-index:5}
 .planilla thead th.col-alumno{left:0;z-index:6}
 .planilla tbody tr:nth-child(even){background:#fbf8f2}
 .planilla tbody tr:hover{background:var(--rojo-suave)}
@@ -252,7 +252,7 @@ details.materia.alerta{border-left:4px solid var(--rojo)}
   display:flex;align-items:flex-end;justify-content:center}
 @media(min-width:640px){.modal-fondo{align-items:center}}
 .modal{background:var(--papel);width:100%;max-width:520px;border-radius:20px 20px 0 0;
-  padding:26px;max-height:88vh;overflow-y:auto}
+  padding:26px;max-height:88vh;overflow-y:auto;box-sizing:border-box}
 @media(min-width:640px){.modal{border-radius:20px}}
 .modal h3{margin-bottom:18px;font-size:1.25rem}
 .modal .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}

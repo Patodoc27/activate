@@ -30,13 +30,18 @@ window.Views.familia = function (view, ctx) {
 
   function cargarHijo() {
     var sid = state.hijo;
+    var hijo = state.hijos.filter(function (h) { return h.id === sid; })[0];
     Promise.all([
       sb.from('enrollments')
         .select('subject_id, subjects(id,name,short_name)')
         .eq('student_id', sid),
-      sb.from('terms').select('id,name,ordinal').order('ordinal', { ascending: false })
+      sb.from('terms').select('id,name,ordinal').order('ordinal', { ascending: false }),
+      sb.from('subject_courses').select('subject_id').eq('course_id', hijo ? hijo.course_id : -1)
     ]).then(function (rs) {
-      var materias = (rs[0].data || []).map(function (e) { return e.subjects; });
+      var enCurso = {};
+      (rs[2].data || []).forEach(function (x) { enCurso[x.subject_id] = true; });
+      var materias = (rs[0].data || []).map(function (e) { return e.subjects; })
+        .filter(function (s) { return enCurso[s.id]; });
       var termsList = rs[1].data || [];
       var terms = {};
       termsList.forEach(function (t) { terms[t.id] = t; });

@@ -15,9 +15,13 @@ window.Views.estudiante = function (view, ctx) {
         state.me = r.data;
         Promise.all([
           sb.from('enrollments').select('subject_id, subjects(id,name,short_name)').eq('student_id', state.me.id),
-          sb.from('terms').select('id,name,ordinal')
+          sb.from('terms').select('id,name,ordinal'),
+          sb.from('subject_courses').select('subject_id').eq('course_id', state.me.course_id)
         ]).then(function (rs) {
-          var materias = (rs[0].data || []).map(function (e) { return e.subjects; });
+          var enCurso = {};
+          (rs[2].data || []).forEach(function (x) { enCurso[x.subject_id] = true; });
+          var materias = (rs[0].data || []).map(function (e) { return e.subjects; })
+            .filter(function (s) { return enCurso[s.id]; });
           var terms = {};
           (rs[1].data || []).forEach(function (t) { terms[t.id] = t; });
           var mids = materias.map(function (m) { return m.id; });

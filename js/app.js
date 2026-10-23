@@ -28,10 +28,20 @@
     return (n || '').replace(/[\(\[]?\s*1[°º]\s*[AB]\s*[\)\]]?/g, ' ')
       .replace(/\s{2,}/g, ' ').trim();
   }
+  var TIPO_CLAVES = { eval: ['evaluac', 'examen', 'prueba'], oral: ['oral', 'coloquio'],
+    tp: ['trabajo', 'practico', 'tp'], cuest: ['cuestionario'], juego: ['juego'],
+    agust: ['agust', 'perfil'], part: ['particip'], carp: ['carpeta'],
+    proy: ['proyect', 'integrador'], otro: [] };
+  function sinTildes(s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
   function tipoActividad(a) {
     if (!a || !a.kind) return '';
     var t = TIPO_NOMBRES[a.kind];
-    if (!t || (a.title || '').toLowerCase().indexOf(t.toLowerCase()) === 0) return '';
+    if (!t) return '';
+    var tit = sinTildes(a.title);
+    var claves = TIPO_CLAVES[a.kind] || [];
+    for (var i = 0; i < claves.length; i++) if (tit.indexOf(claves[i]) !== -1) return '';
     return t + ' · ';
   }
 
