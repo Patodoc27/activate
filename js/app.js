@@ -189,9 +189,37 @@
   }
 
   function pickCourse(account, user, cb) {
-    sb.from('courses').select('id,name,sort').order('sort', { ascending: true })
+    // Cursos permitidos según rol: docente = los que enseña, familia = los de sus hijos; null = todos
+    var paso = Promise.resolve(null);
+    if (account.role === 'docente') {
+      paso = sb.from('teacher_assignments').select('subject_id').eq('account_id', user.id)
+        .then(function (r) {
+          var sids = (r.data || []).map(function (x) { return x.subject_id; });
+          if (!sids.length) return [];
+          return sb.from('subject_courses').select('course_id').in('subject_id', sids)
+            .then(function (r2) { return (r2.data || []).map(function (x) { return x.course_id; }); });
+        });
+    } else if (account.role === 'familia') {
+      paso = sb.from('guardian_links').select('students(course_id)').eq('guardian_account_id', user.id)
+        .then(function (r) { return (r.data || []).map(function (x) { return x.students ? x.students.course_id : null; }); });
+    }
+    paso.then(function (permitidos) {
+      sb.from('courses').select('id,name,sort').order('sort', { ascending: true })
       .then(function (r) {
         var cursos = r.data || [];
+        if (permitidos) {
+          var ok = {};
+          permitidos.forEach(function (id) { if (id != null) ok[id] = 1; });
+          cursos = cursos.filter(function (c) { return ok[c.id]; });
+        }
+        if (cursos.length === 1) { try { sessionStorage.setItem('curso-' + user.id, String(cursos[0].id)); } catch (e) {} cb(cursos[0]); return; }
+        if (!cursos.length) {
+          app.innerHTML = '<div class="pick-wrap"><div class="pick-head">' + escudoIMG
+            + '<h2>Sin cursos asignados</h2><div class="sub">Todavía no tenés materias o estudiantes vinculados. Avisá a dirección.</div>'
+            + '<div class="pick-pie"><button class="btn-salir" id="pick-salir" style="color:var(--tinta);border-color:var(--linea-fuerte)">Salir</button></div></div></div>';
+          document.getElementById('pick-salir').addEventListener('click', function () { sb.auth.signOut(); });
+          return;
+        }
         var html = '<div class="pick-wrap"><div class="pick-head">' + escudoIMG
           + '<h2>¿Qué curso?</h2>'
           + '<div class="sub">Elegí el curso para ver sus materias y estudiantes — ' + esc(account.role === 'familia' ? 'así ves a tu hijo aunque haya otro con el mismo nombre en otro curso' : 'así te quedan solo las materias de esa división') + '</div></div>'
@@ -211,6 +239,7 @@
           grid.appendChild(b);
         });
       });
+    });
   }
 
   /* ---------- Marco con topbar ---------- */

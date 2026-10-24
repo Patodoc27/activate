@@ -5,7 +5,8 @@ window.Views.docente = function (view, ctx) {
   var SOLO_LECTURA = ctx.readonly === true;
   var state = { subjects: [], subject: null, terms: [], term: null,
                 activities: [], students: [], grades: {}, finals: {}, termGrades: {},
-                filtro: '', autoTimer: null, calMes: null, verPlanilla: false };
+                filtro: '', autoTimer: null, calMes: null, verPlanilla: false,
+                resumen: true, cierres: {} };
 
   function cargar() {
     var prom = CURSO
@@ -40,7 +41,78 @@ window.Views.docente = function (view, ctx) {
       if (!state.term && state.terms.length) state.term = state.terms[0].id;
       if (!state.subjects.filter(function (s) { return s.ids.join(',') === state.subject; }).length)
         state.subject = state.subjects[0].ids.join(',');
-      cargarMateria();
+      if (state.resumen) dibujarResumen(); else cargarMateria();
+    });
+  }
+
+  /* Panel de entrada: "Mi materia" con estadísticas del curso */
+  function dibujarResumen() {
+    view.innerHTML = '<div class="seccion-titulo"><h2>'
+      + (state.subjects.length > 1 ? 'Mis materias' : 'Mi materia') + '</h2>'
+      + '<span class="nota">' + esc(ctx.course ? ctx.course.name : '') + '</span></div>'
+      + '<div id="resumen-cards"><div class="vacio">Cargando estadísticas…</div></div>'
+      + '<button class="btn" id="ingresar" style="width:100%;margin-top:16px;padding:15px;font-size:1.02rem">Ingresar</button>';
+    view.querySelector('#ingresar').addEventListener('click', function () { state.resumen = false; cargarMateria(); });
+    var todos = [];
+    state.subjects.forEach(function (s) { todos = todos.concat(s.ids); });
+    sb.from('activities').select('id,subject_id,kind').in('subject_id', todos).then(function (ra) {
+      var acts = ra.data || [];
+      var actIds = acts.map(function (a) { return a.id; });
+      var porAct = {};
+      acts.forEach(function (a) { porAct[a.id] = a.subject_id; });
+      function todasLasNotas(desde, acum) {
+        if (!actIds.length) return Promise.resolve(acum);
+        return sb.from('grades').select('activity_id,value,status,activities!inner(subject_id)')
+          .in('activities.subject_id', todos).order('activity_id').range(desde, desde + 999)
+          .then(function (r) {
+            var filas = r.data || [];
+            acum = acum.concat(filas);
+            return filas.length === 1000 ? todasLasNotas(desde + 1000, acum) : acum;
+          });
+      }
+      Promise.all([
+        sb.from('enrollments').select('student_id,subject_id').in('subject_id', todos).limit(5000),
+        todasLasNotas(0, [])
+      ]).then(function (rs2) {
+        var enr = rs2[0].data || [], grads = rs2[1] || [];
+        var html = '';
+        state.subjects.forEach(function (s) {
+          var actsS = acts.filter(function (a) { return s.ids.indexOf(a.subject_id) !== -1 && a.kind !== 'mesa'; });
+          var alumnos = {};
+          enr.forEach(function (e) { if (s.ids.indexOf(e.subject_id) !== -1) alumnos[e.student_id] = 1; });
+          var nAlu = Object.keys(alumnos).length;
+          var buckets = [0, 0, 0, 0, 0], nCal = 0, suma = 0;
+          grads.forEach(function (g) {
+            if (s.ids.indexOf(porAct[g.activity_id]) === -1) return;
+            if (g.status !== 'calificada' || g.value == null) return;
+            var v = Number(g.value);
+            nCal++; suma += v;
+            buckets[v <= 2 ? 0 : v <= 4 ? 1 : v <= 6 ? 2 : v <= 8 ? 3 : 4]++;
+          });
+          var esperadas = actsS.length * nAlu;
+          var pct = esperadas ? Math.round(nCal / esperadas * 100) : 0;
+          var prom = nCal ? (suma / nCal).toFixed(1).replace('.', ',') : '—';
+          var maxB = Math.max.apply(null, buckets.concat([1]));
+          var etq = ['1-2', '3-4', '5-6', '7-8', '9-10'];
+          var bars = buckets.map(function (n, i) {
+            var color = i < 2 ? 'var(--rojo)' : (i === 2 ? 'var(--ambre)' : 'var(--azul)');
+            return '<div class="bar-col"><div class="bar-n">' + (n || '') + '</div>'
+              + '<div class="bar" style="height:' + Math.max(Math.round(n / maxB * 46), 2) + 'px;background:' + color + '"></div>'
+              + '<div class="bar-l">' + etq[i] + '</div></div>';
+          }).join('');
+          html += '<div class="card card-resumen"><div class="res-titulo">' + esc(s.nombre) + '</div>'
+            + '<div class="res-stats">'
+            + '<div class="res-stat"><b>' + nAlu + '</b><span>estudiantes</span></div>'
+            + '<div class="res-stat"><b>' + actsS.length + '</b><span>actividades</span></div>'
+            + '<div class="res-stat"><b>' + pct + '%</b><span>notas cargadas</span></div>'
+            + '<div class="res-stat"><b>' + prom + '</b><span>promedio</span></div></div>'
+            + (nCal ? '<div class="barras">' + bars + '</div><div class="res-pie">Distribución de notas cargadas (rojo < 5 · ambre 5-6 · azul 7+)</div>'
+              : '<div class="res-pie">Todavía no hay notas cargadas en esta materia.</div>')
+            + '</div>';
+        });
+        var z = view.querySelector('#resumen-cards');
+        if (z) z.innerHTML = html;
+      });
     });
   }
 
@@ -138,7 +210,7 @@ window.Views.docente = function (view, ctx) {
   }
   // Ponderación con 2 decimales y nota sugerida (redondea hacia arriba desde ,50)
   function pondTxt(nt) { return nt != null ? nt.toFixed(2).replace('.', ',') : ''; }
-  function sug(nt) { return nt != null ? Math.round(nt) : null; }
+  function sug(nt) { return nt != null ? Math.max(1, Math.round(nt)) : null; }
 
   function dibujar() {
     var acts = actsDelTerm();
@@ -155,7 +227,8 @@ window.Views.docente = function (view, ctx) {
       '<div class="seccion-titulo"><h2>Mis materias</h2>'
       + '<span class="nota">' + (SOLO_LECTURA ? 'Solo lectura: podés ver lo que cargaron los docentes' : 'Tocá una actividad para cargar las notas; el peso va al lado de cada una') + '</span></div>'
       + '<div class="pills" id="pills"></div>'
-      + '<div class="toolbar"><div class="pills grupo" id="pillsT" style="margin:0"></div><div class="spacer"></div>'
+      + '<div class="toolbar"><button class="btn btn-ghost btn-mini" id="volver-resumen" title="Volver al resumen">Resumen</button>'
+      + '<div class="pills grupo" id="pillsT" style="margin:0"></div><div class="spacer"></div>'
       + (SOLO_LECTURA ? '' : '<button class="btn btn-mini" id="nueva">+ Nueva actividad</button>')
       + '<button class="btn btn-ghost btn-mini" id="ver-planilla">' + (state.verPlanilla ? 'Cerrar planilla' : 'Ver planilla completa') + '</button></div>'
       + '<div class="stats">'
@@ -184,6 +257,7 @@ window.Views.docente = function (view, ctx) {
     });
     var btnNueva = view.querySelector('#nueva');
     if (btnNueva) btnNueva.addEventListener('click', function () { modalActividad(null); });
+    view.querySelector('#volver-resumen').addEventListener('click', function () { state.resumen = true; dibujarResumen(); });
     view.querySelector('#ver-planilla').addEventListener('click', function () {
       state.verPlanilla = !state.verPlanilla;
       dibujar();
@@ -351,12 +425,15 @@ window.Views.docente = function (view, ctx) {
         h += '<div class="bloque-sugerida"><h3 class="subt">Nota sugerida del trimestre'
           + ' <span class="nota">ponderación con peso ' + peso + '%' + (peso < 100 ? ' — proyecta con lo cargado' : '') + ' · redondea desde ,50</span></h3>'
           + '<div class="sug-lista">' + filasSug + '</div>'
-          + (SOLO_LECTURA ? '' : '<button class="btn btn-mini" id="hab-lista" style="margin-top:10px">Habilitar trimestre</button>') + '</div>';
+          + (SOLO_LECTURA ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-mini" id="aceptar-sug">Aceptar nota sugerida</button>'
+          + '<button class="btn btn-ghost btn-mini" id="hab-lista">Ajustar una por una</button></div>') + '</div>';
       }
     }
     z.innerHTML = h + '<div class="aviso" id="peso-msg" style="display:none;margin-top:8px"></div>';
     var btnHab = z.querySelector('#hab-lista');
     if (btnHab) btnHab.addEventListener('click', modalHabilitar);
+    var btnSug = z.querySelector('#aceptar-sug');
+    if (btnSug) btnSug.addEventListener('click', aceptarSugeridas);
     z.querySelectorAll('.act-btn').forEach(function (b) {
       b.addEventListener('click', function () {
         var a = state.activities.filter(function (x) { return x.id === Number(b.getAttribute('data-act')); })[0];
@@ -858,6 +935,23 @@ window.Views.docente = function (view, ctx) {
     });
   }
 
+  // Aceptar la sugerida para todos los estudiantes de una vez (no pisa las ya habilitadas)
+  function aceptarSugeridas() {
+    var ups = [];
+    state.students.forEach(function (s) {
+      var nt = notaTrimestre(s.id);
+      if (nt == null || state.termGrades[s.id + '_' + state.term]) return;
+      ups.push({ student_id: s.id, subject_id: idsMateria()[0], term_id: state.term,
+        computed: Math.round(nt * 100) / 100, value: sug(nt), updated_by: ctx.user.id });
+    });
+    if (!ups.length) return;
+    if (!confirm('¿Aceptar la nota sugerida para ' + ups.length + ' estudiantes? Después podés ajustar cualquiera a mano.')) return;
+    sb.from('term_grades').upsert(ups, { onConflict: 'student_id,subject_id,term_id' }).then(function (r) {
+      if (r.error) alert('No se pudo habilitar: ' + r.error.message);
+      else cargarMateria();
+    });
+  }
+
   // Habilitar trimestre: revisar la calculada, ajustar a mano y publicar
   function modalHabilitar() {
     var acts = actsDelTerm();
@@ -872,17 +966,26 @@ window.Views.docente = function (view, ctx) {
       if (nt != null) conCalif++;
       filas += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</div>'
         + '<div class="meta">' + (nt != null ? 'ponderación ' + pondTxt(nt) + ' · sugerida <b>' + sug(nt) + '</b>' : 'sin datos') + '</div></div>'
-        + '<input class="nota" style="width:70px;text-align:center;padding:8px;border:1.5px solid var(--linea);border-radius:8px;font-weight:700" type="number" min="0" max="10" step="1" inputmode="numeric" data-hab="' + s.id + '" value="' + valor + '"></div>';
+        + '<input class="nota" style="width:70px;text-align:center;padding:8px;border:1.5px solid var(--linea);border-radius:8px;font-weight:700" type="number" min="0" max="10" step="1" inputmode="numeric" data-hab="' + s.id + '"'
+        + (sug(nt) != null ? ' placeholder="' + sug(nt) + '"' : '') + ' value="' + valor + '"></div>';
     });
     fondo.innerHTML =
       '<div class="modal"><h3>Habilitar nota de trimestre</h3>'
       + '<div class="aviso info">' + A.icon('libro') + '<div>Peso asignado: <b>' + peso + '%</b>' + (peso < 100 ? ' — la ponderación proyecta con lo cargado' : '') + '. La sugerida redondea hacia arriba desde ,50 (6,50 → 7). Revisá cada nota, ajustá si hace falta y confirmá.</div></div>'
       + '<div style="max-height:46vh;overflow-y:auto">' + filas + '</div>'
-      + '<div class="acciones"><button class="btn-ghost btn" id="h-cancel">Cancelar</button>'
+      + '<div class="acciones"><button class="btn-ghost btn" id="h-sug">Aceptar sugeridas</button>'
+      + '<button class="btn-ghost btn" id="h-cancel">Cancelar</button>'
       + '<button class="btn" id="h-ok">Habilitar ' + conCalif + ' notas</button></div></div>';
     document.body.appendChild(fondo);
     fondo.querySelector('#h-cancel').addEventListener('click', function () { fondo.remove(); });
     fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
+    fondo.querySelector('#h-sug').addEventListener('click', function () {
+      fondo.querySelectorAll('input[data-hab]').forEach(function (inp) {
+        if (inp.value !== '') return;
+        var nt = notaTrimestre(Number(inp.getAttribute('data-hab')));
+        if (sug(nt) != null) inp.value = sug(nt);
+      });
+    });
     fondo.querySelector('#h-ok').addEventListener('click', function () {
       var ups = [];
       fondo.querySelectorAll('input[data-hab]').forEach(function (inp) {
