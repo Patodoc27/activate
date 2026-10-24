@@ -464,6 +464,8 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
 .act-btn svg { color: rgba(255,255,255,.8); }
 .act-btn.mesa { background: var(--tinta); box-shadow: 0 2px 7px rgba(31,27,24,.22); }
 .act-btn.mesa:hover, .act-btn.mesa:active { background: #38302a; }
+.fecha-ed { flex: none; width: 128px; padding: 8px 6px; border: 1.5px solid var(--linea); border-radius: 9px; font: inherit; font-size: .78rem; color: var(--tinta); background: var(--blanco); }
+.fecha-ed:focus { outline: 2px solid var(--rojo-suave); border-color: var(--rojo); }
 .peso-box { display: flex; align-items: center; gap: 3px; flex: none; }
 .peso-box input { width: 52px; text-align: center; padding: 8px 4px; border: 1.5px solid var(--linea); border-radius: 9px; font: inherit; font-weight: 800; color: var(--tinta); background: var(--blanco); }
 .peso-box input:focus { outline: 2px solid var(--rojo-suave); border-color: var(--rojo); }

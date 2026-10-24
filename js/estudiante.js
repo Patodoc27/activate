@@ -47,11 +47,12 @@ window.Views.estudiante = function (view, ctx) {
     termg.forEach(function (t) { tmap[t.subject_id + '_' + t.term_id] = t.value; });
     var hoy = A.hoy();
 
-    var prox = [], vencidas = [], calif = [];
+    var prox = [], vencidas = [], calif = [], sinFecha = [];
     acts.forEach(function (a) {
       var g = gmap[a.id];
       if (a.due_date && a.due_date >= hoy) prox.push(a);
       else if (a.due_date && a.due_date < hoy && (!g || g.status !== 'calificada')) vencidas.push(a);
+      else if (!a.due_date && (!g || g.status !== 'calificada')) sinFecha.push(a);
       if (g && g.status === 'calificada') calif.push(a);
     });
 
@@ -78,8 +79,8 @@ window.Views.estudiante = function (view, ctx) {
       });
     }
 
-    html += '<h3 class="subt">Próximas entregas</h3>';
-    if (!otras.length) html += '<div class="vacio">' + A.icon('tilde') + 'Nada por vencer. Bien ahí.</div>';
+    html += '<h3 class="subt">Actividades pendientes</h3>';
+    if (!otras.length && !sinFecha.length) html += '<div class="vacio">' + A.icon('tilde') + 'Nada pendiente. Bien ahí.</div>';
     otras.forEach(function (a) {
       var f = a.due_date.split('-');
       var cl = a.due_date === hoy ? ' entrega hoy' : '';
@@ -90,6 +91,12 @@ window.Views.estudiante = function (view, ctx) {
         + (a.weight != null ? '<div class="meta">peso ' + a.weight + '%</div>' : '')
         + (a.description ? '<div class="meta">' + esc(a.description) + '</div>' : '')
         + '</div>' + A.chipDias(a.due_date) + '</div>';
+    });
+    sinFecha.forEach(function (a) {
+      html += '<div class="entrega"><div class="cal"><div class="dia">—</div><div class="mes"></div></div>'
+        + '<div class="info"><div class="materia-tag">' + esc(mname[a.subject_id] || '')
+        + '</div><div class="tit">' + esc(A.nombreActividad(a)) + '</div>'
+        + '<div class="meta">sin fecha de cierre todavía</div></div></div>';
     });
 
     if (vencidas.length) {

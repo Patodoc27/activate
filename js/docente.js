@@ -528,24 +528,15 @@ window.Views.docente = function (view, ctx) {
       return;
     }
     function filaAct(a, esMesa) {
-      var cargadas = 0;
-      state.students.forEach(function (s) {
-        var g = state.grades[a.id + '_' + s.id];
-        if (g && g.status !== 'sin_calificar') cargadas++;
-      });
-      var deben = 0;
-      if (esMesa) {
-        state.students.forEach(function (s) {
-          var f = finalEfectiva(s.id);
-          if (f != null && Number(f) < 6) deben++;
-        });
-      }
-      var metaTxt = (a.due_date ? A.fmtFecha(a.due_date) + ' · ' + A.textoDias(a.due_date) : 'sin fecha')
-        + (esMesa ? ' · ' + deben + ' deben rendir' : ' · ' + cargadas + '/' + state.students.length + ' notas');
+      var metaTxt = a.due_date ? 'cierra ' + A.fmtFecha(a.due_date) : 'sin fecha de cierre';
       var r = '<div class="fila-act"><button class="act-btn' + (esMesa ? ' mesa' : '') + '" data-act="' + a.id + '"><div class="info">'
         + '<div class="titulo">' + esc(cap(A.nombreActividad(a))) + '</div>'
-        + '<div class="meta">' + metaTxt + '</div></div>'
+        + '<div class="meta" data-meta-fecha>' + metaTxt + '</div></div>'
         + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><path d="M9 18l6-6-6-6"/></svg></button>';
+      if (!SOLO_LECTURA) {
+        r += '<input class="fecha-ed" type="date" data-fecha="' + a.id + '" value="' + (a.due_date || '') + '"'
+          + ' title="Fecha de cierre — se muestra a estudiantes y familias" aria-label="Fecha de cierre de ' + esc(a.title) + '">';
+      }
       if (!esMesa) {
         if (SOLO_LECTURA) {
           r += '<div class="peso-box" style="justify-content:center"><span>'
@@ -595,6 +586,24 @@ window.Views.docente = function (view, ctx) {
       });
     });
     var avisoTimer = null;
+    z.querySelectorAll('input[data-fecha]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var aid = Number(inp.getAttribute('data-fecha'));
+        var act = state.activities.filter(function (x) { return x.id === aid; })[0];
+        var viejo = act ? act.due_date : null;
+        var v = inp.value || null;
+        inp.disabled = true;
+        sb.from('activities').update({ due_date: v }).eq('id', aid).then(function (r) {
+          inp.disabled = false;
+          if (r.error) { inp.value = viejo || ''; alert('No se pudo guardar la fecha: ' + r.error.message); return; }
+          if (act) act.due_date = v;
+          var fila = inp.closest('.fila-act');
+          var meta = fila ? fila.querySelector('[data-meta-fecha]') : null;
+          if (meta) meta.textContent = v ? 'cierra ' + A.fmtFecha(v) : 'sin fecha de cierre';
+          dibujarCal();
+        });
+      });
+    });
     z.querySelectorAll('input[data-peso]').forEach(function (inp) {
       inp.addEventListener('change', function () {
         var aid = Number(inp.getAttribute('data-peso'));
