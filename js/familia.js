@@ -142,7 +142,7 @@ window.Views.familia = function (view, ctx) {
         hEv += '<div class="entrega eval' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])
           + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
           + '</div></div><div class="info"><div class="materia-tag">' + esc(A.nombreMateria(p.m.short_name || p.m.name))
-          + '</div><div class="tit">' + esc(A.tipoActividad(p.a) + p.a.title) + '</div></div>'
+          + '</div><div class="tit">' + esc(A.nombreActividad(p.a)) + '</div></div>'
           + A.chipDias(p.a.due_date) + '</div>';
       });
       ag.innerHTML = hEv;
@@ -187,7 +187,7 @@ window.Views.familia = function (view, ctx) {
         if (nota === '—') cl += ' vacia';
         else if (g && g.status === 'calificada' && g.value <= 5) cl += ' alerta';
         var tname = d.terms[a.term_id] ? d.terms[a.term_id].name : '';
-        cuerpo += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(A.tipoActividad(a) + a.title) + '</div>'
+        cuerpo += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(A.nombreActividad(a)) + '</div>'
           + '<div class="meta">' + esc(tname)
           + (a.weight != null ? ' · peso ' + a.weight + '%' : '')
           + (a.due_date ? ' · entrega ' + A.fmtFecha(a.due_date)

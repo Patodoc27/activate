@@ -1,5 +1,5 @@
 /* Service worker — caché simple de la shell; los datos siempre frescos */
-var CACHE = 'activate-v7';
+var CACHE = 'activate-v8';
 var SHELL = ['.', 'index.html', 'styles.css', 'config.js',
              'js/app.js', 'js/docente.js', 'js/familia.js', 'js/estudiante.js',
              'vendor/supabase-js.js', 'escudo.png', 'icon-192.png', 'manifest.webmanifest'];

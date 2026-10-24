@@ -112,7 +112,7 @@ window.Views.docente = function (view, ctx) {
   function dibujar() {
     var acts = actsDelTerm();
     var sinCalificar = 0;
-    acts.forEach(function (a) {
+    acts.filter(function (a) { return a.kind !== 'mesa'; }).forEach(function (a) {
       state.students.forEach(function (s) {
         var g = state.grades[a.id + '_' + s.id];
         if (!g || g.status === 'sin_calificar') sinCalificar++;
@@ -129,7 +129,7 @@ window.Views.docente = function (view, ctx) {
       + '<button class="btn btn-ghost btn-mini" id="ver-planilla">' + (state.verPlanilla ? 'Cerrar planilla' : 'Ver planilla completa') + '</button></div>'
       + '<div class="stats">'
       + '<div class="stat"><div class="n">' + state.students.length + '</div><div class="l">estudiantes</div></div>'
-      + '<div class="stat"><div class="n">' + acts.length + '</div><div class="l">actividades</div></div>'
+      + '<div class="stat"><div class="n">' + acts.filter(function (a) { return a.kind !== 'mesa'; }).length + '</div><div class="l">actividades</div></div>'
       + '<div class="stat' + (sinCalificar ? ' alerta' : '') + '"><div class="n">' + sinCalificar + '</div><div class="l">sin calificar</div></div>'
       + '<div class="stat' + (peso > 100 ? ' alerta' : '') + '"><div class="n">' + peso + '%</div><div class="l">peso del trimestre</div></div></div>'
       + '<div id="cal"></div>'
@@ -227,7 +227,7 @@ window.Views.docente = function (view, ctx) {
     var filas = delDia.map(function (a) {
       var t = state.terms.filter(function (x) { return x.id === a.term_id; })[0];
       return '<button class="fila-act act-btn-cal" data-act="' + a.id + '"><div class="info">'
-        + '<div class="titulo">' + esc(tipoActividad(a) + a.title) + '</div>'
+        + '<div class="titulo">' + esc(A.nombreActividad(a)) + '</div>'
         + '<div class="meta">' + (t ? esc(t.name) : '') + (a.weight != null ? ' · peso ' + a.weight + '%' : '') + '</div></div></button>';
     }).join('');
     fondo.innerHTML = '<div class="modal"><h3>' + esc(A.fmtFecha(fecha)) + '</h3>' + filas
@@ -269,10 +269,18 @@ window.Views.docente = function (view, ctx) {
         var g = state.grades[a.id + '_' + s.id];
         if (g && g.status !== 'sin_calificar') cargadas++;
       });
+      var deben = 0;
+      if (esMesa) {
+        state.students.forEach(function (s) {
+          var f = state.finals[s.id];
+          if (f != null && Number(f) < 6) deben++;
+        });
+      }
+      var metaTxt = (a.due_date ? A.fmtFecha(a.due_date) + ' · ' + A.textoDias(a.due_date) : 'sin fecha')
+        + (esMesa ? ' · ' + deben + ' deben rendir' : ' · ' + cargadas + '/' + state.students.length + ' notas');
       var r = '<div class="fila-act"><button class="act-btn' + (esMesa ? ' mesa' : '') + '" data-act="' + a.id + '"><div class="info">'
-        + '<div class="titulo">' + esc(cap(tipoActividad(a) + a.title)) + '</div>'
-        + '<div class="meta">' + (a.due_date ? A.fmtFecha(a.due_date) + ' · ' + A.textoDias(a.due_date) : 'sin fecha')
-        + ' · ' + cargadas + '/' + state.students.length + ' notas</div></div>'
+        + '<div class="titulo">' + esc(cap(A.nombreActividad(a))) + '</div>'
+        + '<div class="meta">' + metaTxt + '</div></div>'
         + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><path d="M9 18l6-6-6-6"/></svg></button>';
       if (!esMesa) {
         r += '<div class="peso-box"><input type="number" min="0" max="100" step="1" inputmode="numeric"'
@@ -349,7 +357,7 @@ window.Views.docente = function (view, ctx) {
       + '<th class="col-alumno alumno">Estudiante</th>';
     acts.forEach(function (a) {
       html += '<th class="num"><button class="th-act" data-edit="' + a.id + '" title="'
-        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(tipoActividad(a) + a.title) + '</span>'
+        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(A.nombreActividad(a)) + '</span>'
         + '<span class="t2">' + (a.weight != null ? a.weight + '%' : 'sin peso')
         + (a.due_date ? ' · ' + A.textoDias(a.due_date) : '') + '</span></button></th>';
     });
@@ -439,23 +447,39 @@ window.Views.docente = function (view, ctx) {
   /* Carga de notas de una actividad: lista de estudiantes, un recuadro 1-10 (solo .5) */
   function modalNotas(act) {
     var fondo = el('div', 'modal-fondo');
+    var esMesa = act.kind === 'mesa';
+    var lista = state.students;
+    if (esMesa) {
+      lista = state.students.filter(function (s) {
+        var f = state.finals[s.id];
+        return f != null && Number(f) < 6;
+      });
+    }
     var filas = '';
-    state.students.forEach(function (s) {
+    lista.forEach(function (s) {
       var g = state.grades[act.id + '_' + s.id];
       var st = g ? g.status : 'sin_calificar';
       var v = g && g.status === 'calificada' && g.value != null ? g.value : '';
       filas += '<div class="fila-act" data-sid="' + s.id + '"><div class="info"><div class="titulo">'
-        + esc(s.last_name) + ', ' + esc(s.first_name) + '</div></div>'
+        + esc(s.last_name) + ', ' + esc(s.first_name)
+        + (esMesa ? ' <span class="chip" style="margin-left:6px">final ' + esc(String(state.finals[s.id])) + '</span>' : '')
+        + '</div></div>'
         + '<select class="estado nf-est">'
         + opt('sin_calificar', '—', st) + opt('pendiente', 'Pend.', st)
         + opt('no_presentado', 'No pres.', st) + opt('calificada', 'Nota', st) + '</select>'
         + '<input class="nota nf-nota" type="number" min="1" max="10" step="0.5" inputmode="decimal"'
         + ' placeholder="1-10" value="' + v + '"' + (st === 'calificada' ? '' : ' disabled') + '></div>';
     });
+    var avisoIni = esMesa
+      ? '<div class="aviso info">' + A.icon('alerta') + '<div>Aparecen solo los estudiantes con <b>nota final menor a 6</b>. Si todos aprobaron, la lista queda vacía.</div></div>'
+      : '<div class="aviso info">' + A.icon('lapiz') + '<div>Notas del <b>1 al 10</b> en pasos de medio punto '
+        + '(7, 7.5, 8…). Pendiente y No presentado se eligen en la lista de cada estudiante.</div></div>';
+    if (esMesa && !lista.length) {
+      filas = '<div class="vacio" style="padding:26px">Ningún estudiante debe rendir esta instancia:<br>todos tienen nota final de 6 o más (o aún no cargaste las finales).</div>';
+    }
     fondo.innerHTML =
-      '<div class="modal"><h3>' + esc(tipoActividad(act) + act.title) + '</h3>'
-      + '<div class="aviso info">' + A.icon('lapiz') + '<div>Notas del <b>1 al 10</b> en pasos de medio punto '
-      + '(7, 7.5, 8…). Pendiente y No presentado se eligen en la lista de cada estudiante.</div></div>'
+      '<div class="modal"><h3>' + esc(A.nombreActividad(act)) + '</h3>'
+      + avisoIni
       + '<div style="max-height:52vh;overflow-y:auto">' + filas + '</div>'
       + '<div class="aviso" id="mn-msg" style="display:none"></div>'
       + '<div class="acciones"><button class="btn-ghost btn" id="mn-editar">Editar actividad</button>'
@@ -772,7 +796,7 @@ window.Views.docente = function (view, ctx) {
   function descargarExcel() {
     var acts = actsDelTerm();
     var cab = ['Estudiante'].concat(acts.map(function (a) {
-      return tipoActividad(a) + a.title + (a.weight != null ? ' (' + a.weight + '%)' : '');
+      return A.nombreActividad(a) + (a.weight != null ? ' (' + a.weight + '%)' : '');
     }), ['Trimestre', 'Final']);
     var filas = [cab];
     state.students.forEach(function (s) {
@@ -807,7 +831,7 @@ window.Views.docente = function (view, ctx) {
       + '<div class="ph-meta">' + esc(nombreTermSel()) + ' · ' + state.students.length + ' estudiantes · ' + hoy + '</div></div>'
       + '<table class="ph-tabla"><thead><tr><th class="ph-alumno">Estudiante</th>';
     acts.forEach(function (a) {
-      h += '<th>' + esc(tipoActividad(a) + a.title) + (a.weight != null ? '<br><span class="ph-peso">' + a.weight + '%</span>' : '') + '</th>';
+      h += '<th>' + esc(A.nombreActividad(a)) + (a.weight != null ? '<br><span class="ph-peso">' + a.weight + '%</span>' : '') + '</th>';
     });
     h += '<th class="ph-trim">Trim.</th><th class="ph-trim">Final</th></tr></thead><tbody>';
     state.students.forEach(function (s) {

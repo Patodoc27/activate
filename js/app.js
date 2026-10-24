@@ -21,7 +21,7 @@
   var TIPO_NOMBRES = { eval: 'Evaluación escrita', oral: 'Evaluación oral',
     tp: 'Trabajo práctico', cuest: 'Cuestionario virtual', juego: 'Juego educativo',
     agust: 'Perfil agustiniano', part: 'Participación en clase', carp: 'Carpeta',
-    proy: 'Proyecto', otro: 'Otra actividad' };
+    proy: 'Proyecto', mesa: 'Mesa / instancia final', otro: 'Otra actividad' };
   function nombreTipo(k) { return TIPO_NOMBRES[k] || ''; }
   // "Historia (1° A)" y "Historia" son la misma materia para mostrar
   function nombreMateria(n) {
@@ -43,6 +43,37 @@
     var claves = TIPO_CLAVES[a.kind] || [];
     for (var i = 0; i < claves.length; i++) if (tit.indexOf(claves[i]) !== -1) return '';
     return t + ' · ';
+  }
+  // Palabras de cada categoría: se quitan del título para no repetir
+  var PALABRAS_TIPO = {
+    eval: ['evaluacion', 'evaluación', 'escrita', 'escrito', 'examen', 'prueba', 'test'],
+    oral: ['oral', 'coloquio', 'exposicion', 'exposición'],
+    tp: ['trabajo', 'practico', 'práctico', 'tp', 'tps'],
+    cuest: ['cuestionario', 'cuestionarios', 'virtual', 'virtuales', 'quiz', 'forms'],
+    juego: ['juego', 'juegos', 'educativo', 'educativa', 'educativos', 'ludico', 'lúdico', 'ludica', 'lúdica', 'trivia'],
+    agust: ['perfil', 'agustiniano', 'agustiniana', 'agustino'],
+    part: ['participacion', 'participación', 'clase', 'clases'],
+    carp: ['carpeta', 'carpetas'],
+    proy: ['proyecto', 'integrador', 'integradora'],
+    mesa: ['mesa', 'intensificacion', 'intensificación'],
+    otro: [] };
+  var STOP = { en: 1, de: 1, del: 1, el: 1, la: 1, los: 1, las: 1, y: 1, a: 1, e: 1, o: 1, u: 1, con: 1, por: 1, para: 1, un: 1, una: 1 };
+  // Texto a mostrar: 'Tipo · tema' sin repetir palabras de la categoría;
+  // si el tema queda vacío se muestra solo el tipo.
+  function nombreActividad(a) {
+    if (!a) return '';
+    var tipo = nombreTipo(a.kind);
+    var t = String(a.title || '').replace(/[\s:.,;\-–·"']+/g, ' ').trim();
+    if (a.kind === 'mesa' || !tipo) return t ? t.charAt(0).toUpperCase() + t.slice(1) : tipo;
+    var kw = PALABRAS_TIPO[a.kind] || [];
+    if (kw.length) {
+      t = t.replace(new RegExp('\\b(' + kw.join('|') + ')\\b', 'gi'), ' ')
+        .replace(/\s{2,}/g, ' ').trim();
+    }
+    var queda = t.split(' ').filter(function (w) { return !STOP[w.toLowerCase()]; }).join(' ').trim();
+    if (!queda) return tipo;
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+    return tipo + ' · ' + t;
   }
 
   var Views = window.Views = {};
@@ -109,6 +140,7 @@
                notaTexto: notaTexto, notaDetalle: notaDetalle, escudoIMG: escudoIMG,
                icon: icon, diasHasta: diasHasta, textoDias: textoDias, chipDias: chipDias,
                nombreTipo: nombreTipo, tipoActividad: tipoActividad, nombreMateria: nombreMateria,
+               nombreActividad: nombreActividad,
                Views: Views, boot: null };
 
   /* ---------- Login ---------- */
