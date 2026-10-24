@@ -63,9 +63,24 @@ window.Views.estudiante = function (view, ctx) {
       + '<div class="stat' + (vencidas.length ? ' alerta' : '') + '"><div class="n">' + vencidas.length + '</div><div class="l">vencidas</div></div>'
       + '<div class="stat"><div class="n">' + calif.length + '</div><div class="l">calificadas</div></div></div>';
 
+    var evals = prox.filter(function (a) { return a.kind === 'eval' || a.kind === 'oral'; });
+    var otras = prox.filter(function (a) { return a.kind !== 'eval' && a.kind !== 'oral'; });
+    if (evals.length) {
+      html += '<h3 class="subt">Evaluaciones</h3>';
+      evals.forEach(function (a) {
+        var f = a.due_date.split('-');
+        var cl = a.due_date === hoy ? ' entrega hoy' : '';
+        html += '<div class="entrega eval' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])
+          + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
+          + '</div></div><div class="info"><div class="materia-tag">' + esc(mname[a.subject_id] || '')
+          + '</div><div class="tit">' + esc(A.tipoActividad(a) + a.title) + '</div></div>'
+          + A.chipDias(a.due_date) + '</div>';
+      });
+    }
+
     html += '<h3 class="subt">Próximas entregas</h3>';
-    if (!prox.length) html += '<div class="vacio">' + A.icon('tilde') + 'Nada por vencer. Bien ahí.</div>';
-    prox.forEach(function (a) {
+    if (!otras.length) html += '<div class="vacio">' + A.icon('tilde') + 'Nada por vencer. Bien ahí.</div>';
+    otras.forEach(function (a) {
       var f = a.due_date.split('-');
       var cl = a.due_date === hoy ? ' entrega hoy' : '';
       html += '<div class="entrega' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])

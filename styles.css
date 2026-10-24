@@ -370,3 +370,35 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   .ph-tabla tbody tr{page-break-inside:avoid}
   .ph-pie{margin-top:8px;font-size:7pt;color:#666}
 }
+
+/* Calendario docente */
+.calendario { background: var(--blanco); border: 1.5px solid var(--linea); border-radius: 14px; padding: 12px; margin-bottom: 16px; }
+.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.cal-tit { flex: 1; text-align: center; font-weight: 800; font-size: .95rem; color: var(--tinta); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-dow { text-align: center; font-size: .68rem; font-weight: 800; color: var(--gris); padding: 4px 0; text-transform: uppercase; }
+.cal-dia { aspect-ratio: 1; border: 1px solid var(--linea); border-radius: 9px; background: var(--fondo); color: var(--tinta); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 2px; }
+.cal-dia:hover { border-color: var(--rojo); }
+.cal-dia.vacio { background: transparent; border-color: transparent; cursor: default; }
+.cal-dia.hoy { border-color: var(--rojo); box-shadow: inset 0 0 0 1px var(--rojo); }
+.cal-dia.con-act { background: var(--crema); }
+.cal-dia.ev { background: var(--rojo); color: #fff; border-color: var(--rojo); }
+.cal-puntos { display: flex; gap: 2px; min-height: 5px; }
+.cal-puntos i, .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gris-claro); display: inline-block; }
+.cal-dia.ev .cal-puntos i { background: #fff; }
+.cal-puntos i.ev, .cal-dot.ev { background: var(--rojo); }
+.cal-dia.ev .cal-puntos i.ev { background: #fff; }
+.cal-pie { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: .72rem; color: var(--gris); }
+.cal-pie span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Lista de actividades con peso al lado */
+.act-btn { flex: 1; min-width: 0; background: none; border: 0; font: inherit; text-align: left; display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 0; color: inherit; }
+.act-btn:active .titulo { color: var(--rojo); }
+.peso-box { display: flex; align-items: center; gap: 3px; flex: none; }
+.peso-box input { width: 52px; text-align: center; padding: 8px 4px; border: 1.5px solid var(--linea); border-radius: 9px; font: inherit; font-weight: 800; color: var(--tinta); background: var(--blanco); }
+.peso-box input:focus { outline: 2px solid var(--rojo-suave); border-color: var(--rojo); }
+.peso-box span { font-size: .75rem; font-weight: 700; color: var(--gris); }
+.act-btn-cal { width: 100%; background: none; border: 0; font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.act-btn-cal:hover .titulo { color: var(--rojo); }
+.entrega.eval { border-color: var(--rojo); background: var(--rojo-suave); }
+.entrega.eval .cal { background: var(--rojo); color: #fff; }

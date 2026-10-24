@@ -122,15 +122,31 @@ window.Views.familia = function (view, ctx) {
       pillsT.appendChild(b);
     });
 
-    // Próximas entregas (todas las materias, plazo >= hoy)
-    var proximas = [];
+    // Evaluaciones y entregas próximas (plazo >= hoy)
+    var evals = [], proximas = [];
     d.materias.forEach(function (m) {
       (d.acts[m.id] || []).forEach(function (a) {
-        if (a.due_date && a.due_date >= hoy) proximas.push({ m: m, a: a });
+        if (!a.due_date || a.due_date < hoy) return;
+        if (a.kind === 'eval' || a.kind === 'oral') evals.push({ m: m, a: a });
+        else proximas.push({ m: m, a: a });
       });
     });
+    evals.sort(function (x, y) { return x.a.due_date < y.a.due_date ? -1 : 1; });
     proximas.sort(function (x, y) { return x.a.due_date < y.a.due_date ? -1 : 1; });
     var ag = view.querySelector('#agenda');
+    if (evals.length) {
+      var hEv = '<h3 class="subt">Evaluaciones</h3>';
+      evals.slice(0, 6).forEach(function (p) {
+        var f = p.a.due_date.split('-');
+        var cl = p.a.due_date === hoy ? ' entrega hoy' : '';
+        hEv += '<div class="entrega eval' + cl + '"><div class="cal"><div class="dia">' + Number(f[2])
+          + '</div><div class="mes">' + ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][Number(f[1])]
+          + '</div></div><div class="info"><div class="materia-tag">' + esc(A.nombreMateria(p.m.short_name || p.m.name))
+          + '</div><div class="tit">' + esc(A.tipoActividad(p.a) + p.a.title) + '</div></div>'
+          + A.chipDias(p.a.due_date) + '</div>';
+      });
+      ag.innerHTML = hEv;
+    }
     if (proximas.length) {
       var html2 = '<h3 class="subt">Próximas entregas</h3>';
       proximas.slice(0, 6).forEach(function (p) {
@@ -142,7 +158,7 @@ window.Views.familia = function (view, ctx) {
           + '</div><div class="tit">' + esc(p.a.title) + '</div></div>'
           + A.chipDias(p.a.due_date) + '</div>';
       });
-      ag.innerHTML = html2;
+      ag.innerHTML += html2;
     }
 
     var mats = view.querySelector('#materias');
