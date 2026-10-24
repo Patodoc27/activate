@@ -175,7 +175,7 @@ window.Views.familia = function (view, ctx) {
       var bajas = acts.some(function (a) { var g = d.grades[a.id]; return g && g.status === 'calificada' && g.value != null && g.value <= 5; });
       var chips = '';
       if (d.finals[m.id] != null) chips += '<span class="chip final">Final ' + d.finals[m.id] + '</span>';
-      if (tg != null) chips += '<span class="chip final">Trimestre ' + tg + '</span>';
+      if (tg != null) chips += '<span class="chip final">' + esc((d.terms[state.term] || { name: 'Trimestre' }).name.replace('trimestre', 'T')) + ' ' + tg + '</span>';
       if (conNota) chips += '<span class="chip">' + conNota + ' calificada' + (conNota > 1 ? 's' : '') + '</span>';
       if (noPres) chips += '<span class="chip aviso">' + noPres + ' no presentada' + (noPres > 1 ? 's' : '') + '</span>';
       var cuerpo = '';

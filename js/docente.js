@@ -2,6 +2,7 @@
 window.Views.docente = function (view, ctx) {
   var sb = A.sb, esc = A.esc, el = A.el;
   var CURSO = ctx.course ? ctx.course.id : null;
+  var XBTN = '<button class="modal-x" aria-label="Cerrar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
   var SOLO_LECTURA = ctx.readonly === true;
   var state = { subjects: [], subject: null, terms: [], term: null,
                 activities: [], students: [], grades: {}, finals: {}, termGrades: {},
@@ -174,12 +175,11 @@ window.Views.docente = function (view, ctx) {
           if (!conDatos || !pesos) return null;
           return suma / pesos;
         }
+        // Solo notas de cierre habilitadas por el docente — sin sugeridas
         function notaTrimResumen(sid, sids, termId) {
           var sidPrim = sids[0];
           var hab = cierreMap[sid + '_' + sidPrim + '_' + termId];
-          if (hab != null) return { nota: hab, sugerida: false };
-          var nt = pondResumen(sid, sids, termId);
-          return nt != null ? { nota: Math.max(1, Math.round(nt)), sugerida: true } : null;
+          return hab != null ? { nota: hab } : null;
         }
         function fmt(v) { return v != null ? v.toFixed(1).replace('.', ',') : '—'; }
         var html = '';
@@ -224,14 +224,15 @@ window.Views.docente = function (view, ctx) {
               : '<div class="torta torta-vacia"><div class="torta-centro">—</div></div>';
             html += '<div class="res-trim"><div class="res-trim-t">' + esc(t.name) + '</div>'
               + '<div class="res-trim-body"><div class="res-trim-stats">'
-              + '<span><b>' + nAlu + '</b> estudiantes</span>'
               + '<span><b>' + actsT.length + '</b> actividades</span>'
-              + '<span><b>' + apr + '</b> aprobados</span>'
-              + '<span><b>' + des + '</b> desaprobados</span>'
-              + '<span>promedio <b>' + fmt(promT) + '</b></span>'
+              + (notas.length
+                ? '<span><b>' + apr + '</b> aprobados</span>'
+                + '<span><b>' + des + '</b> desaprobados</span>'
+                + '<span>promedio <b>' + fmt(promT) + '</b></span>'
+                : '<span class="res-sin">aún sin nota de cierre</span>')
               + '</div>' + torta + '</div>'
-              + (notas.length ? '<div class="res-pie">' + pApr + '% aprobados · ' + (100 - pApr) + '% desaprobados (sobre ' + notas.length + ' con nota de trimestre)</div>'
-                : '<div class="res-pie">Sin notas de trimestre todavía.</div>')
+              + (notas.length ? '<div class="res-pie">' + pApr + '% aprobados · ' + (100 - pApr) + '% desaprobados (sobre ' + notas.length + ' con nota de cierre)</div>'
+                : '')
               + '</div>';
           });
           html += '</div>';
@@ -244,7 +245,8 @@ window.Views.docente = function (view, ctx) {
 
   function nombreMateria(n) {
     return (n || '').replace(/[\(\[]?\s*1[°º]\s*[AB]\s*[\)\]]?/g, ' ')
-      .replace(/\s{2,}/g, ' ').trim();
+      .replace(/\s{2,}/g, ' ').trim()
+      .replace(/\bY\b/g, 'y');
   }
 
   function idsMateria() { return state.subject.split(',').map(Number); }
@@ -377,8 +379,9 @@ window.Views.docente = function (view, ctx) {
     });
     var peso = pesoTotal();
 
+    var subjActual = state.subjects.filter(function (s) { return s.ids.join(',') === state.subject; })[0];
     view.innerHTML =
-      '<div class="seccion-titulo"><h2>Mis materias</h2>'
+      '<div class="seccion-titulo"><h2>' + esc(subjActual ? subjActual.nombre : 'Mis materias') + '</h2>'
       + '<span class="nota">' + (SOLO_LECTURA ? 'Solo lectura: podés ver lo que cargaron los docentes' : 'Tocá una actividad para cargar las notas; el peso va al lado de cada una') + '</span></div>'
       + '<div class="pills" id="pills"></div>'
       + '<div class="toolbar"><button class="btn btn-ghost btn-mini" id="volver-resumen" title="Volver al resumen">Resumen</button>'
@@ -388,13 +391,13 @@ window.Views.docente = function (view, ctx) {
       + '<div class="stats">'
       + '<div class="stat"><div class="n">' + state.students.length + '</div><div class="l">estudiantes</div></div>'
       + '<div class="stat"><div class="n">' + acts.filter(function (a) { return a.kind !== 'mesa'; }).length + '</div><div class="l">actividades</div></div>'
-      + '<div class="stat' + (sinCalificar ? ' alerta' : '') + '"><div class="n">' + sinCalificar + '</div><div class="l">sin calificar</div></div>'
+      + '<div class="stat' + (sinCalificar ? ' alerta' : '') + '"><div class="n">' + sinCalificar + '</div><div class="l">notas por cargar</div></div>'
       + '<div class="stat' + (peso > 100 ? ' alerta' : '') + '"><div class="n">' + peso + '%</div><div class="l">peso del trimestre</div></div></div>'
       + '<div id="cal"></div>'
       + '<div id="lista"></div>'
       + '<div id="zona-planilla"' + (state.verPlanilla ? '' : ' class="oculta"') + '></div>'
       + '<div class="leyenda"><span><b>0</b> = pendiente de entrega</span><span><b>1</b> = no presentado</span>'
-      + '<span><b>—</b> = sin calificación</span><span><b>Trim.</b> se calcula por peso; la <b>Final</b> es el promedio de trimestres (editable a mano).</span></div>';
+      + '<span><b>—</b> = sin calificación</span></div>';
 
     var pills = view.querySelector('#pills');
     state.subjects.forEach(function (s) {
@@ -404,7 +407,7 @@ window.Views.docente = function (view, ctx) {
       pills.appendChild(b);
     });
     var pillsT = view.querySelector('#pillsT');
-    state.terms.forEach(function (t) {
+    state.terms.slice().sort(function (a, b) { return a.id - b.id; }).forEach(function (t) {
       var b = el('button', 'pill' + (t.id === state.term ? ' activa' : ''), t.name.replace('trimestre', 'T'));
       b.addEventListener('click', function () { state.term = t.id; dibujar(); });
       pillsT.appendChild(b);
@@ -493,11 +496,12 @@ window.Views.docente = function (view, ctx) {
         + '<div class="titulo">' + esc(A.nombreActividad(a)) + '</div>'
         + '<div class="meta">' + (t ? esc(t.name) : '') + (a.weight != null ? ' · peso ' + a.weight + '%' : '') + '</div></div></button>';
     }).join('');
-    fondo.innerHTML = '<div class="modal"><h3>' + esc(A.fmtFecha(fecha)) + '</h3>' + filas
+    fondo.innerHTML = '<div class="modal">' + XBTN + '<h3>' + esc(A.fmtFecha(fecha)) + '</h3>' + filas
       + '<div class="acciones"><button class="btn-ghost btn" id="md-cancel">Cerrar</button>'
       + (SOLO_LECTURA ? '' : '<button class="btn" id="md-nueva">+ Actividad este día</button>') + '</div></div>';
     document.body.appendChild(fondo);
     fondo.querySelector('#md-cancel').addEventListener('click', function () { fondo.remove(); });
+    fondo.querySelector('.modal-x').addEventListener('click', function () { fondo.remove(); });
     fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
     var btnMd = fondo.querySelector('#md-nueva');
     if (btnMd) btnMd.addEventListener('click', function () {
@@ -794,7 +798,7 @@ window.Views.docente = function (view, ctx) {
       filas = '<div class="vacio" style="padding:26px">Ningún estudiante debe rendir esta instancia:<br>todos tienen nota final de 6 o más (o aún no cargaste las finales).</div>';
     }
     fondo.innerHTML =
-      '<div class="modal"><h3>' + esc(A.nombreActividad(act)) + '</h3>'
+      '<div class="modal">' + XBTN + '<h3>' + esc(A.nombreActividad(act)) + '</h3>'
       + avisoIni
       + '<div style="max-height:52vh;overflow-y:auto">' + filas + '</div>'
       + '<div class="aviso" id="mn-msg" style="display:none"></div>'
@@ -803,6 +807,7 @@ window.Views.docente = function (view, ctx) {
     document.body.appendChild(fondo);
     function cerrar() { fondo.remove(); cargarMateria(); }
     fondo.querySelector('#mn-listo').addEventListener('click', cerrar);
+    fondo.querySelector('.modal-x').addEventListener('click', cerrar);
     fondo.addEventListener('click', function (e) { if (e.target === fondo) cerrar(); });
     var btnEdit = fondo.querySelector('#mn-editar');
     if (btnEdit) btnEdit.addEventListener('click', function () {
@@ -1029,7 +1034,7 @@ window.Views.docente = function (view, ctx) {
     var esEdicion = !!act;
     var fondo = el('div', 'modal-fondo');
     fondo.innerHTML =
-      '<div class="modal"><h3>' + (esEdicion ? 'Editar actividad' : 'Nueva actividad') + '</h3>'
+      '<div class="modal">' + XBTN + '<h3>' + (esEdicion ? 'Editar actividad' : 'Nueva actividad') + '</h3>'
       + '<div class="campo"><label>Tipo de actividad</label><select id="m-tipo">'
       + TIPOS.map(function (t) { return '<option value="' + t[0] + '"' + (act && act.kind === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('')
       + '</select></div>'
@@ -1045,6 +1050,7 @@ window.Views.docente = function (view, ctx) {
       + '<button class="btn" id="m-ok">' + (esEdicion ? 'Guardar' : 'Crear actividad') + '</button></div></div>';
     document.body.appendChild(fondo);
     fondo.querySelector('#m-cancel').addEventListener('click', function () { fondo.remove(); });
+    fondo.querySelector('.modal-x').addEventListener('click', function () { fondo.remove(); });
     fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
     if (esEdicion) fondo.querySelector('#m-del').addEventListener('click', function () {
       if (!confirm('¿Eliminar "' + act.title + '"? También se borran sus calificaciones.')) return;
@@ -1113,7 +1119,7 @@ window.Views.docente = function (view, ctx) {
         + (sug(nt) != null ? ' placeholder="' + sug(nt) + '"' : '') + ' value="' + valor + '"></div>';
     });
     fondo.innerHTML =
-      '<div class="modal"><h3>Habilitar nota de trimestre</h3>'
+      '<div class="modal">' + XBTN + '<h3>Habilitar nota de trimestre</h3>'
       + '<div class="aviso info">' + A.icon('libro') + '<div>Peso asignado: <b>' + peso + '%</b>' + (peso < 100 ? ' — la ponderación proyecta con lo cargado' : '') + '. La sugerida redondea hacia arriba desde ,50 (6,50 → 7). Revisá cada nota, ajustá si hace falta y confirmá.</div></div>'
       + '<div style="max-height:46vh;overflow-y:auto">' + filas + '</div>'
       + '<div class="acciones"><button class="btn-ghost btn" id="h-sug">Aceptar sugeridas</button>'
@@ -1121,6 +1127,7 @@ window.Views.docente = function (view, ctx) {
       + '<button class="btn" id="h-ok">Habilitar ' + conCalif + ' notas</button></div></div>';
     document.body.appendChild(fondo);
     fondo.querySelector('#h-cancel').addEventListener('click', function () { fondo.remove(); });
+    fondo.querySelector('.modal-x').addEventListener('click', function () { fondo.remove(); });
     fondo.addEventListener('click', function (e) { if (e.target === fondo) fondo.remove(); });
     fondo.querySelector('#h-sug').addEventListener('click', function () {
       fondo.querySelectorAll('input[data-hab]').forEach(function (inp) {
