@@ -664,13 +664,14 @@ window.Views.docente = function (view, ctx) {
         + '<span class="t2">' + (a.weight != null ? a.weight + '%' : 'sin peso')
         + (a.due_date ? ' · ' + A.textoDias(a.due_date) : '') + '</span></button></th>';
     });
-    html += '<th class="num">Trim.<br><span style="font-weight:400;font-size:.68rem;opacity:.75">calculada</span></th>'
+    var nomTrim = (state.terms.filter(function (t) { return t.id === state.term; })[0] || { name: 'Trimestre' }).name;
+    html += '<th class="num">' + esc(nomTrim) + '<br><span style="font-weight:400;font-size:.68rem;opacity:.75">calculada</span></th>'
       + '<th class="num">Final</th>';
     mesas.forEach(function (a) {
       html += '<th class="num"><button class="th-act" data-edit="' + a.id + '" title="Instancia fuera del período lectivo"><span class="t1">'
-        + esc(a.title) + '</span><span class="t2">mesa</span></button></th>';
+        + esc(a.title) + '</span></button></th>';
     });
-    html += '<th class="num">Nota Final<br><span style="font-weight:400;font-size:.68rem;opacity:.75">cierre</span></th></tr></thead><tbody>';
+    html += '<th class="num">Nota Final</th></tr></thead><tbody>';
     state.students.forEach(function (s) {
       html += '<tr data-nom="' + esc((s.last_name + ' ' + s.first_name).toLowerCase()) + '"><td class="alumno">'
         + esc(s.last_name) + ', ' + esc(s.first_name) + '</td>';
