@@ -268,7 +268,7 @@ window.Views.docente = function (view, ctx) {
         .in('subject_id', todos).eq('term_id', state.term).limit(5000),
       sb.from('enrollments').select('student_id,subject_id').in('subject_id', todos).limit(5000),
       sb.from('activities').select('id,subject_id,kind')
-        .in('subject_id', todos).eq('term_id', state.term).limit(2000)
+        .in('subject_id', todos).limit(3000)
     ]).then(function (rs) {
       var cierres = rs[0].data || [], enr = rs[1].data || [], acts = rs[2].data || [];
       var lista = view.querySelector('#panel-lista');
@@ -285,7 +285,7 @@ window.Views.docente = function (view, ctx) {
           return s.ids.indexOf(a.subject_id) !== -1 && a.kind !== 'mesa';
         }).length;
         var pApr = notas.length ? Math.round(apr / notas.length * 100) : 0;
-        var card = el('button', 'card panel-card' + (notas.length ? '' : ' panel-vacia'));
+        var card = el('button', 'card panel-card' + (nActs ? (notas.length ? '' : ' panel-vacia') : ' panel-cero'));
         card.innerHTML = '<div class="panel-nom">' + esc(s.nombre) + '</div>'
           + '<div class="panel-bar">'
           + (notas.length
@@ -297,7 +297,11 @@ window.Views.docente = function (view, ctx) {
           + (notas.length
             ? '<b>' + apr + '</b> aprobados · <b>' + des + '</b> desaprobados · ' + pApr + '% aprobación'
             : 'aún sin nota de cierre en este trimestre')
-          + ' · ' + nAlu + ' estudiantes · ' + nActs + ' actividades</div>';
+          + ' · ' + nAlu + ' estudiantes · '
+          + (nActs
+            ? nActs + ' actividades'
+            : '<b class="panel-cero-txt">0 actividades cargadas</b>')
+          + '</div>';
         card.addEventListener('click', function () {
           state.subject = s.ids.join(',');
           state.resumen = false;

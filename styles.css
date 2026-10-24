@@ -531,3 +531,7 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
 .alerta-est{display:flex;align-items:baseline;gap:9px;padding:5px 0;font-size:.9rem}
 .alerta-est>span:first-child{font-weight:600}
 .alerta-cant{font-size:.76rem;color:var(--gris)}
+/* Materias sin actividades cargadas (panel preceptor/dirección) */
+.panel-card.panel-cero{border:1.5px solid var(--rojo);background:#fdf3f1}
+.panel-card.panel-cero .panel-nom{color:var(--rojo-osc)}
+.panel-cero-txt{color:var(--rojo)}
