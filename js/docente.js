@@ -178,9 +178,9 @@ window.Views.docente = function (view, ctx) {
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     var hoy = A.hoy();
     var h = '<div class="calendario"><div class="cal-head">'
-      + '<button class="btn-nav" id="cal-ant" aria-label="Mes anterior">‹</button>'
+      + '<button class="cal-nav" id="cal-ant" aria-label="Mes anterior">‹</button>'
       + '<div class="cal-tit">' + MESES[mm] + ' ' + yy + '</div>'
-      + '<button class="btn-nav" id="cal-sig" aria-label="Mes siguiente">›</button></div>'
+      + '<button class="cal-nav" id="cal-sig" aria-label="Mes siguiente">›</button></div>'
       + '<div class="cal-grid">';
     ['L', 'M', 'M', 'J', 'V', 'S', 'D'].forEach(function (d) { h += '<div class="cal-dow">' + d + '</div>'; });
     for (var i = 0; i < offset; i++) h += '<div class="cal-dia vacio"></div>';
@@ -188,7 +188,9 @@ window.Views.docente = function (view, ctx) {
       var f = yy + '-' + (mm < 10 ? '0' : '') + mm + '-' + (d < 10 ? '0' : '') + d;
       var ad = porDia[f] || [];
       var evs = ad.filter(function (a) { return a.kind === 'eval' || a.kind === 'oral'; });
-      var cls = 'cal-dia' + (f === hoy ? ' hoy' : '') + (evs.length ? ' ev' : (ad.length ? ' con-act' : ''));
+      var dow = new Date(yy, mm - 1, d).getDay();
+      var cls = 'cal-dia' + (f === hoy ? ' hoy' : '') + (evs.length ? ' ev' : (ad.length ? ' con-act' : ''))
+        + ((dow === 0 || dow === 6) ? ' finde' : '');
       h += '<button class="' + cls + '" data-fecha="' + f + '"><span>' + d + '</span>';
       if (ad.length) {
         h += '<span class="cal-puntos">';

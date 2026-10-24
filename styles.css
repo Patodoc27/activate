@@ -372,23 +372,37 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
 }
 
 /* Calendario docente */
-.calendario { background: var(--blanco); border: 1.5px solid var(--linea); border-radius: 14px; padding: 12px; margin-bottom: 16px; }
-.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.cal-tit { flex: 1; text-align: center; font-weight: 800; font-size: .95rem; color: var(--tinta); }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-.cal-dow { text-align: center; font-size: .68rem; font-weight: 800; color: var(--gris); padding: 4px 0; text-transform: uppercase; }
-.cal-dia { aspect-ratio: 1; border: 1px solid var(--linea); border-radius: 9px; background: var(--fondo); color: var(--tinta); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 2px; }
-.cal-dia:hover { border-color: var(--rojo); }
-.cal-dia.vacio { background: transparent; border-color: transparent; cursor: default; }
-.cal-dia.hoy { border-color: var(--rojo); box-shadow: inset 0 0 0 1px var(--rojo); }
+.calendario { background: var(--papel); border: 1px solid var(--linea); border-radius: 18px; margin-bottom: 18px; overflow: hidden; box-shadow: 0 3px 12px rgba(31,27,24,.06); }
+.cal-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px;
+  background: linear-gradient(135deg, #b8433f 0%, var(--rojo) 55%, var(--rojo-osc) 100%); }
+.cal-tit { flex: 1; text-align: center; font-weight: 800; font-size: 1.05rem; color: #fff; letter-spacing: .02em; }
+.cal-nav { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.16);
+  color: #fff; font: inherit; font-size: 1.15rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.cal-nav:hover { background: rgba(255,255,255,.32); }
+.cal-nav:active { transform: scale(.92); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 10px 10px 4px; }
+.cal-dow { text-align: center; font-size: .66rem; font-weight: 800; color: var(--gris-claro); padding: 2px 0 6px; letter-spacing: .08em; }
+.cal-dia { aspect-ratio: 1; border: none; border-radius: 12px; background: transparent; color: var(--tinta);
+  font: inherit; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  transition: background .12s; }
+.cal-dia:hover { background: var(--rojo-suave); }
+.cal-dia.vacio, .cal-dia.vacio:hover { background: transparent; cursor: default; }
+.cal-dia.finde { color: var(--gris-claro); }
+.cal-dia > span:first-child { width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; }
+.cal-dia.hoy > span:first-child { background: var(--rojo); color: #fff; font-weight: 800; box-shadow: 0 2px 6px rgba(172,54,54,.4); }
 .cal-dia.con-act { background: var(--crema); }
-.cal-dia.ev { background: var(--rojo); color: #fff; border-color: var(--rojo); }
-.cal-puntos { display: flex; gap: 2px; min-height: 5px; }
+.cal-dia.ev { background: var(--rojo-suave); }
+.cal-dia.ev > span:first-child { color: var(--rojo-osc); font-weight: 800; }
+.cal-dia.hoy.ev > span:first-child { background: var(--rojo); color: #fff; }
+.cal-puntos { display: flex; gap: 3px; min-height: 5px; align-items: center; }
 .cal-puntos i, .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gris-claro); display: inline-block; }
-.cal-dia.ev .cal-puntos i { background: #fff; }
 .cal-puntos i.ev, .cal-dot.ev { background: var(--rojo); }
-.cal-dia.ev .cal-puntos i.ev { background: #fff; }
-.cal-pie { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: .72rem; color: var(--gris); }
+.cal-dia.ev .cal-puntos i:not(.ev) { background: var(--rojo-claro); }
+.cal-pie { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 14px 12px; margin-top: 4px;
+  font-size: .72rem; color: var(--gris); border-top: 1px dashed var(--linea); }
 .cal-pie span { display: inline-flex; align-items: center; gap: 5px; }
 
 /* Lista de actividades con peso al lado */
