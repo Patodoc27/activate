@@ -59,7 +59,8 @@ window.Views.docente = function (view, ctx) {
         .in('subject_id', sids).order('due_date', { ascending: true }),
       sb.from('enrollments').select('student_id, students(id,last_name,first_name,course_id)').in('subject_id', sids),
       sb.from('final_grades').select('student_id,value').in('subject_id', sids),
-      sb.from('subject_courses').select('subject_id,course_id').in('subject_id', sids)
+      sb.from('subject_courses').select('subject_id,course_id').in('subject_id', sids),
+      sb.from('cierre_grades').select('student_id,value').in('subject_id', sids)
     ]).then(function (rs) {
       state.activities = rs[0].data || [];
       // materia compartida entre divisiones: la clase mezcla estudiantes de ambos cursos
@@ -73,6 +74,8 @@ window.Views.docente = function (view, ctx) {
         .sort(function (a, b) { return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name); });
       state.finals = {};
       (rs[2].data || []).forEach(function (f) { state.finals[f.student_id] = f.value; });
+      state.cierres = {};
+      (rs[4].data || []).forEach(function (f) { state.cierres[f.student_id] = f.value; });
       var ids = state.activities.map(function (a) { return a.id; });
       if (!ids.length) { state.grades = {}; dibujar(); return; }
       sb.from('grades').select('id,activity_id,student_id,value,status')
@@ -92,6 +95,26 @@ window.Views.docente = function (view, ctx) {
 
   function actsDelTerm() {
     return state.activities.filter(function (a) { return a.term_id === state.term; });
+  }
+  function mesasDelTerm() {
+    return actsDelTerm().filter(function (a) { return a.kind === 'mesa'; }).sort(function (x, y) {
+      var o = function (a) { var t = (a.title || '').toLowerCase(); return t.indexOf('dic') !== -1 ? 0 : (t.indexOf('feb') !== -1 ? 1 : 2); };
+      return o(x) - o(y) || x.id - y.id;
+    });
+  }
+  // Mesa aprobada (>=6), en orden Diciembre luego Febrero
+  function mesaAprobada(sid) {
+    var mesas = mesasDelTerm(), ap = null;
+    mesas.forEach(function (a) {
+      var g = state.grades[a.id + '_' + sid];
+      if (ap == null && g && g.status === 'calificada' && g.value != null && Number(g.value) >= 6) ap = g.value;
+    });
+    return ap;
+  }
+  // Cierre del año: la nota cargada por el docente o, si aún no la cargó, la mesa aprobada
+  function cierreFinal(sid) {
+    if (state.cierres[sid] != null) return state.cierres[sid];
+    return mesaAprobada(sid);
   }
   function pesoTotal() {
     return actsDelTerm().reduce(function (s, a) { return a.kind === 'mesa' ? s : s + (Number(a.weight) || 0); }, 0);
@@ -353,14 +376,16 @@ window.Views.docente = function (view, ctx) {
   /* Planilla completa: solo se arma cuando el docente la pide */
   function dibujarPlanilla() {
     var tabla = view.querySelector('#zona-planilla');
-    var acts = actsDelTerm();
+    var todas = actsDelTerm();
+    var acts = todas.filter(function (a) { return a.kind !== 'mesa'; });
+    var mesas = mesasDelTerm();
     var barraSup = '<div class="toolbar"><div class="buscar">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
       + '<input id="filtro" placeholder="Buscar alumno…" value="' + esc(state.filtro) + '"></div><div class="spacer"></div>'
       + '<div class="nav-tabla"><button class="btn-nav" id="navIzq" aria-label="Columnas anteriores">‹</button>'
       + '<button class="btn-nav" id="navDer" aria-label="Columnas siguientes">›</button></div></div>';
     if (!state.students.length) { tabla.innerHTML = barraSup + '<div class="vacio">Sin estudiantes en esta materia.</div>'; return; }
-    if (!acts.length) {
+    if (!todas.length) {
       tabla.innerHTML = barraSup + '<div class="vacio">Sin actividades en este trimestre.</div>'
         + '<div class="savebar"><div class="spacer"></div>'
         + '<button class="btn btn-ghost btn-mini" id="excel">Excel</button>'
@@ -379,7 +404,12 @@ window.Views.docente = function (view, ctx) {
         + (a.due_date ? ' · ' + A.textoDias(a.due_date) : '') + '</span></button></th>';
     });
     html += '<th class="num">Trim.<br><span style="font-weight:400;font-size:.68rem;opacity:.75">calculada</span></th>'
-      + '<th class="num">Final</th></tr></thead><tbody>';
+      + '<th class="num">Final</th>';
+    mesas.forEach(function (a) {
+      html += '<th class="num"><button class="th-act" data-edit="' + a.id + '" title="Instancia fuera del período lectivo"><span class="t1">'
+        + esc(a.title) + '</span><span class="t2">mesa</span></button></th>';
+    });
+    html += '<th class="num">Nota Final<br><span style="font-weight:400;font-size:.68rem;opacity:.75">cierre</span></th></tr></thead><tbody>';
     state.students.forEach(function (s) {
       html += '<tr data-nom="' + esc((s.last_name + ' ' + s.first_name).toLowerCase()) + '"><td class="alumno">'
         + esc(s.last_name) + ', ' + esc(s.first_name) + '</td>';
@@ -408,7 +438,27 @@ window.Views.docente = function (view, ctx) {
       html += '<td class="num">' + (SOLO_LECTURA
         ? '<span class="nota-ro">' + (f == null ? '—' : f) + '</span>'
         : '<input class="nota" type="number" min="2" max="10" step="1" inputmode="numeric" value="'
-        + (f == null ? '' : f) + '" data-final="' + s.id + '" aria-label="Nota final de ' + esc(s.last_name) + '">') + '</td></tr>';
+        + (f == null ? '' : f) + '" data-final="' + s.id + '" aria-label="Nota final de ' + esc(s.last_name) + '">') + '</td>';
+      mesas.forEach(function (a) {
+        var g = state.grades[a.id + '_' + s.id];
+        var v = g && g.status === 'calificada' ? g.value : '';
+        var st = g ? g.status : 'sin_calificar';
+        var celda = st === 'pendiente' ? ' celda-pend' : (st === 'no_presentado' ? ' celda-nopres' : (st === 'calificada' ? ' celda-cal' : ''));
+        html += '<td class="num' + celda + '" data-aid="' + a.id + '" data-sid="' + s.id + '">'
+          + (SOLO_LECTURA
+            ? '<span class="nota-ro">' + (st === 'calificada' && v !== '' ? v : (st === 'pendiente' ? '0' : (st === 'no_presentado' ? '1' : '—'))) + '</span>'
+            : '<input class="nota" type="number" min="0" max="10" step="1" inputmode="numeric" aria-label="Nota de '
+            + esc(s.last_name) + ' en ' + esc(a.title) + '" value="' + (v === null || v === undefined ? '' : v) + '">'
+            + '<br><select class="estado" aria-label="Estado">'
+            + opt('sin_calificar', '—', st) + opt('pendiente', '0 pend.', st)
+            + opt('no_presentado', '1 no pres.', st) + opt('calificada', 'nota', st)
+            + '</select>') + '</td>';
+      });
+      var cierre = cierreFinal(s.id);
+      html += '<td class="num">' + (SOLO_LECTURA
+        ? '<span class="nota-ro"><b style="font-size:1.05rem">' + (cierre == null ? '—' : cierre) + '</b></span>'
+        : '<input class="nota" type="number" min="0" max="10" step="1" inputmode="numeric" value="'
+        + (cierre == null ? '' : cierre) + '" data-cierre="' + s.id + '" aria-label="Nota de cierre de ' + esc(s.last_name) + '">') + '</td></tr>';
     });
     html += '</tbody></table></div>'
       + '<div class="savebar"><span class="pendientes" id="pend"></span><div class="spacer"></div>'
@@ -458,7 +508,7 @@ window.Views.docente = function (view, ctx) {
         if (e.key === 'Enter') { e.preventDefault(); var sig = siguienteCelda(td); if (sig) sig.querySelector('input.nota').focus(); }
       });
     });
-    tabla.querySelectorAll('input[data-final]').forEach(function (inp) {
+    tabla.querySelectorAll('input[data-final], input[data-cierre]').forEach(function (inp) {
       inp.addEventListener('input', function () { inp.setAttribute('data-sucia', '1'); programarAutosave(); });
     });
     if (!SOLO_LECTURA) {
@@ -608,13 +658,19 @@ window.Views.docente = function (view, ctx) {
       finales.push({ student_id: Number(inp.getAttribute('data-final')),
         subject_id: idsMateria()[0], value: Number(inp.value), updated_by: ctx.user.id, inp: inp });
     });
-    return { filas: filas, finales: finales };
+    var cierres = [], borrados = [];
+    view.querySelectorAll('input[data-cierre][data-sucia]').forEach(function (inp) {
+      var sid = Number(inp.getAttribute('data-cierre'));
+      if (inp.value === '') borrados.push({ sid: sid, inp: inp });
+      else cierres.push({ student_id: sid, subject_id: idsMateria()[0], value: Number(inp.value), updated_by: ctx.user.id, inp: inp });
+    });
+    return { filas: filas, finales: finales, cierres: cierres, borrados: borrados };
   }
 
   function guardar() {
     clearTimeout(state.autoTimer);
     var p = celdasAPayload();
-    if (!p.filas.length && !p.finales.length) { actualizarPendientes(); return; }
+    if (!p.filas.length && !p.finales.length && !p.cierres.length && !p.borrados.length) { actualizarPendientes(); return; }
     var btn = view.querySelector('#guardar');
     if (btn) btn.disabled = true;
     actualizarPendientes('Guardando…');
@@ -635,6 +691,30 @@ window.Views.docente = function (view, ctx) {
         return sb.from('final_grades').upsert(finClean, { onConflict: 'student_id,subject_id' }).then(function (r2) {
           if (!r2.error) p.finales.forEach(function (f) { f.inp.removeAttribute('data-sucia'); });
           return r2.error;
+        });
+      }
+      return err;
+    }).then(function (err) {
+      if (!err && (p.cierres.length || p.borrados.length)) {
+        var t = Promise.resolve({ error: null });
+        if (p.cierres.length) {
+          var cClean = p.cierres.map(function (f) {
+            return { student_id: f.student_id, subject_id: f.subject_id, value: f.value, updated_by: f.updated_by };
+          });
+          t = sb.from('cierre_grades').upsert(cClean, { onConflict: 'student_id,subject_id' }).then(function (r3) {
+            if (!r3.error) p.cierres.forEach(function (f) { f.inp.removeAttribute('data-sucia'); state.cierres[f.student_id] = f.value; });
+            return r3;
+          });
+        }
+        return t.then(function (r3) {
+          if (r3 && r3.error) return r3.error;
+          if (!p.borrados.length) return null;
+          return sb.from('cierre_grades').delete()
+            .in('student_id', p.borrados.map(function (b) { return b.sid; }))
+            .eq('subject_id', idsMateria()[0]).then(function (r4) {
+              if (!r4.error) p.borrados.forEach(function (b) { b.inp.removeAttribute('data-sucia'); delete state.cierres[b.sid]; });
+              return r4.error;
+            });
         });
       }
       return err;
@@ -663,10 +743,18 @@ window.Views.docente = function (view, ctx) {
           var nt = notaTrimestre(s.id);
           var tg = state.termGrades[s.id + '_' + state.term];
           var td = tr.querySelectorAll('td.num');
-          var cell = td[td.length - 2];
+          var nActs = actsDelTerm().filter(function (a) { return a.kind !== 'mesa'; }).length;
+          var cell = td[nActs];
           if (cell) cell.innerHTML = tg
             ? '<b style="font-size:1.05rem">' + tg.value + '</b>' + (tg.computed != null && Math.abs(Number(tg.computed) - Number(tg.value)) > 0.001 ? '<br><span style="font-size:.66rem;color:var(--gris)">pond ' + pondTxt(Number(tg.computed)) + '</span>' : '')
             : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + pondTxt(nt) + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">sugiere <b>' + sug(nt) + '</b></span>' : '<span style="color:var(--gris-claro)">—</span>');
+          var cellCierre = td[td.length - 1];
+          var cierre = cierreFinal(s.id);
+          if (cellCierre) {
+            var inpC = cellCierre.querySelector('input[data-cierre]');
+            if (inpC) { if (inpC.value === '' && cierre != null) inpC.value = cierre; }
+            else cellCierre.innerHTML = '<span class="nota-ro"><b style="font-size:1.05rem">' + (cierre == null ? '—' : cierre) + '</b></span>';
+          }
         });
       });
   }
@@ -822,10 +910,11 @@ window.Views.docente = function (view, ctx) {
   }
 
   function descargarExcel() {
-    var acts = actsDelTerm();
+    var acts = actsDelTerm().filter(function (a) { return a.kind !== 'mesa'; });
+    var mesas = mesasDelTerm();
     var cab = ['Estudiante'].concat(acts.map(function (a) {
       return A.nombreActividad(a) + (a.weight != null ? ' (' + a.weight + '%)' : '');
-    }), ['Trimestre', 'Final']);
+    }), ['Trimestre', 'Final'], mesas.map(function (a) { return a.title; }), ['Nota Final']);
     var filas = [cab];
     state.students.forEach(function (s) {
       var fila = [s.last_name + ', ' + s.first_name];
@@ -838,6 +927,12 @@ window.Views.docente = function (view, ctx) {
       var nt = tg ? tg.value : notaTrimestre(s.id);
       fila.push(nt != null ? Number(nt).toFixed(2).replace('.', ',') : '');
       fila.push(state.finals[s.id] != null ? String(state.finals[s.id]).replace('.', ',') : '');
+      mesas.forEach(function (a) {
+        var g = state.grades[a.id + '_' + s.id];
+        fila.push(g && g.status === 'calificada' && g.value != null ? String(g.value).replace('.', ',') : '');
+      });
+      var cierre = cierreFinal(s.id);
+      fila.push(cierre != null ? String(cierre).replace('.', ',') : '');
       filas.push(fila);
     });
     var csv = '﻿' + filas.map(function (f) {
@@ -852,7 +947,8 @@ window.Views.docente = function (view, ctx) {
   }
 
   function imprimir() {
-    var acts = actsDelTerm();
+    var acts = actsDelTerm().filter(function (a) { return a.kind !== 'mesa'; });
+    var mesas = mesasDelTerm();
     var hoy = new Date().toLocaleDateString('es-AR');
     var h = '<div class="ph-head"><div class="ph-brand">Activate · Santo Tomás de Villanueva</div>'
       + '<h1>' + esc(nombreMateriaSel()) + ' — ' + esc(ctx.course ? ctx.course.name : '') + '</h1>'
@@ -861,7 +957,9 @@ window.Views.docente = function (view, ctx) {
     acts.forEach(function (a) {
       h += '<th>' + esc(A.nombreActividad(a)) + (a.weight != null ? '<br><span class="ph-peso">' + a.weight + '%</span>' : '') + '</th>';
     });
-    h += '<th class="ph-trim">Trim.</th><th class="ph-trim">Final</th></tr></thead><tbody>';
+    h += '<th class="ph-trim">Trim.</th><th class="ph-trim">Final</th>';
+    mesas.forEach(function (a) { h += '<th>' + esc(a.title) + '</th>'; });
+    h += '<th class="ph-trim">Nota Final</th></tr></thead><tbody>';
     state.students.forEach(function (s) {
       h += '<tr><td class="ph-alumno">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</td>';
       acts.forEach(function (a) {
@@ -871,7 +969,13 @@ window.Views.docente = function (view, ctx) {
       var tg = state.termGrades[s.id + '_' + state.term];
       var nt = tg ? tg.value : notaTrimestre(s.id);
       h += '<td class="ph-trim">' + (nt != null ? '<b>' + Number(nt).toFixed(2).replace('.', ',') + '</b>' : '—') + '</td>';
-      h += '<td class="ph-trim">' + (state.finals[s.id] != null ? '<b>' + state.finals[s.id] + '</b>' : '—') + '</td></tr>';
+      h += '<td class="ph-trim">' + (state.finals[s.id] != null ? '<b>' + state.finals[s.id] + '</b>' : '—') + '</td>';
+      mesas.forEach(function (a) {
+        var g = state.grades[a.id + '_' + s.id];
+        h += '<td' + (g && g.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(g) + '</td>';
+      });
+      var cierre = cierreFinal(s.id);
+      h += '<td class="ph-trim">' + (cierre != null ? '<b>' + cierre + '</b>' : '—') + '</td></tr>';
     });
     h += '</tbody></table><div class="ph-pie">Pend. = pendiente de entrega · No pres. = no presentado · — = sin calificar · '
       + 'Trim. calculada por peso (total ' + pesoTotal() + '%)</div>';
