@@ -90,11 +90,11 @@ window.Views.docente = function (view, ctx) {
     return state.activities.filter(function (a) { return a.term_id === state.term; });
   }
   function pesoTotal() {
-    return actsDelTerm().reduce(function (s, a) { return s + (Number(a.weight) || 0); }, 0);
+    return actsDelTerm().reduce(function (s, a) { return a.kind === 'mesa' ? s : s + (Number(a.weight) || 0); }, 0);
   }
   // Nota trimestre calculada: Σ(nota×peso)/Σ(peso de lo ya calificado)
   function notaTrimestre(sid) {
-    var acts = actsDelTerm(), suma = 0, pesos = 0, conDatos = false;
+    var acts = actsDelTerm().filter(function (a) { return a.kind !== 'mesa'; }), suma = 0, pesos = 0, conDatos = false;
     acts.forEach(function (a) {
       var g = state.grades[a.id + '_' + sid];
       if (!g || a.weight == null || a.weight === 0) return;
@@ -251,31 +251,42 @@ window.Views.docente = function (view, ctx) {
   /* Primera interfaz de la materia: un botón por actividad + su peso al lado */
   function dibujarLista() {
     var z = view.querySelector('#lista');
-    var acts = actsDelTerm();
+    var todas = actsDelTerm();
+    var acts = todas.filter(function (a) { return a.kind !== 'mesa'; });
+    var mesas = todas.filter(function (a) { return a.kind === 'mesa'; });
     var peso = pesoTotal();
     var h = '<h3 class="subt">Actividades del trimestre'
       + ' <span class="nota" id="peso-total"' + (peso > 100 ? ' style="color:var(--rojo)"' : '') + '>'
       + '(peso total ' + peso + '% de 100%)</span></h3>';
-    if (!acts.length) {
+    if (!acts.length && !mesas.length) {
       z.innerHTML = h + '<div class="vacio">' + A.icon('calendario')
         + 'Todavía no hay actividades en este trimestre.<br>Creá la primera con "+ Nueva actividad" o tocando un día del calendario.</div>';
       return;
     }
-    acts.forEach(function (a) {
+    function filaAct(a, esMesa) {
       var cargadas = 0;
       state.students.forEach(function (s) {
         var g = state.grades[a.id + '_' + s.id];
         if (g && g.status !== 'sin_calificar') cargadas++;
       });
-      h += '<div class="fila-act"><button class="act-btn" data-act="' + a.id + '"><div class="info">'
-        + '<div class="titulo">' + esc(tipoActividad(a) + a.title) + '</div>'
+      var r = '<div class="fila-act"><button class="act-btn' + (esMesa ? ' mesa' : '') + '" data-act="' + a.id + '"><div class="info">'
+        + '<div class="titulo">' + esc(cap(tipoActividad(a) + a.title)) + '</div>'
         + '<div class="meta">' + (a.due_date ? A.fmtFecha(a.due_date) + ' · ' + A.textoDias(a.due_date) : 'sin fecha')
         + ' · ' + cargadas + '/' + state.students.length + ' notas</div></div>'
-        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;opacity:.5"><path d="M9 18l6-6-6-6"/></svg></button>'
-        + '<div class="peso-box"><input type="number" min="0" max="100" step="1" inputmode="numeric"'
-        + ' data-peso="' + a.id + '" value="' + (a.weight != null ? a.weight : '') + '" placeholder="—"'
-        + ' aria-label="Peso de ' + esc(a.title) + '"><span>%</span></div></div>';
-    });
+        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><path d="M9 18l6-6-6-6"/></svg></button>';
+      if (!esMesa) {
+        r += '<div class="peso-box"><input type="number" min="0" max="100" step="1" inputmode="numeric"'
+          + ' data-peso="' + a.id + '" value="' + (a.weight != null ? a.weight : '') + '" placeholder="—"'
+          + ' aria-label="Peso de ' + esc(a.title) + '"><span>%</span></div>';
+      }
+      return r + '</div>';
+    }
+    if (!acts.length) h += '<div class="vacio" style="padding:18px">Solo hay instancias de mesa en este trimestre.</div>';
+    acts.forEach(function (a) { h += filaAct(a, false); });
+    if (mesas.length) {
+      h += '<h3 class="subt">Instancias de mesa</h3>';
+      mesas.forEach(function (a) { h += filaAct(a, true); });
+    }
     z.innerHTML = h + '<div class="aviso" id="peso-msg" style="display:none;margin-top:8px"></div>';
     z.querySelectorAll('.act-btn').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -614,20 +625,21 @@ window.Views.docente = function (view, ctx) {
     ['tp', 'Trabajo práctico'], ['cuest', 'Cuestionario virtual'],
     ['juego', 'Juego educativo'], ['agust', 'Perfil agustiniano'],
     ['part', 'Participación en clase'], ['carp', 'Carpeta'],
-    ['proy', 'Proyecto'], ['otro', 'Otra actividad']
+    ['proy', 'Proyecto'], ['mesa', 'Mesa / instancia final'], ['otro', 'Otra actividad']
   ];
   function nombreTipo(k) {
     for (var i = 0; i < TIPOS.length; i++) if (TIPOS[i][0] === k) return TIPOS[i][1];
     return '';
   }
+  function cap(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
   function tipoActividad(a) {
     var t = a && a.kind ? nombreTipo(a.kind) : '';
     if (!t) return '';
     var tit = (a.title || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    var claves = { eval: ['evaluac', 'examen', 'prueba'], oral: ['oral', 'coloquio'],
+    var claves = { eval: ['evaluac', 'examen', 'prueba', 'escrita'], oral: ['oral', 'coloquio'],
       tp: ['trabajo', 'practico', 'tp'], cuest: ['cuestionario'], juego: ['juego'],
       agust: ['agust', 'perfil'], part: ['particip'], carp: ['carpeta'],
-      proy: ['proyect', 'integrador'], otro: [] }[a.kind] || [];
+      proy: ['proyect', 'integrador'], mesa: ['mesa', 'intensificaci', 'periodo'], otro: [] }[a.kind] || [];
     for (var i = 0; i < claves.length; i++) if (tit.indexOf(claves[i]) !== -1) return '';
     return t + ' · ';
   }

@@ -198,12 +198,11 @@ details.materia.alerta{border-left:4px solid var(--rojo)}
 .chip.final{background:var(--tinta);color:#f5efe6}
 .chip.aviso{background:var(--ambre-suave);color:var(--ambre)}
 .chip.ok{background:var(--verde-suave);color:var(--verde)}
-.fila-act{display:flex;align-items:center;gap:12px;padding:11px 4px;
-  border-bottom:1px dashed var(--linea)}
-.fila-act:last-child{border-bottom:none}
+.fila-act{display:flex;align-items:center;gap:10px;padding:5px 0}
 .fila-act .info{flex:1;min-width:0}
-.fila-act .titulo{font-weight:600;font-size:.93rem}
+.fila-act .titulo{font-weight:700;font-size:.93rem}
 .fila-act .meta{color:var(--gris);font-size:.78rem;margin-top:2px}
+.fila-act .act-btn .meta{color:rgba(255,255,255,.78)}
 .nota-box{min-width:54px;height:54px;border-radius:13px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;
   background:var(--rojo-suave);color:var(--rojo-osc);border:1.5px solid transparent}
@@ -405,9 +404,16 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   font-size: .72rem; color: var(--gris); border-top: 1px dashed var(--linea); }
 .cal-pie span { display: inline-flex; align-items: center; gap: 5px; }
 
-/* Lista de actividades con peso al lado */
-.act-btn { flex: 1; min-width: 0; background: none; border: 0; font: inherit; text-align: left; display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 0; color: inherit; }
-.act-btn:active .titulo { color: var(--rojo); }
+/* Lista de actividades: botones rojos con peso al lado */
+.act-btn { flex: 1; min-width: 0; background: var(--rojo); color: #fff; border: 0; border-radius: 13px;
+  font: inherit; text-align: left; display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 12px 14px; box-shadow: 0 2px 7px rgba(172,54,54,.28); transition: transform .1s, background .15s; }
+.act-btn:hover { background: var(--rojo-osc); }
+.act-btn:active { background: var(--rojo-osc); transform: scale(.985); }
+.act-btn .titulo { color: #fff; }
+.act-btn svg { color: rgba(255,255,255,.8); }
+.act-btn.mesa { background: var(--tinta); box-shadow: 0 2px 7px rgba(31,27,24,.22); }
+.act-btn.mesa:hover, .act-btn.mesa:active { background: #38302a; }
 .peso-box { display: flex; align-items: center; gap: 3px; flex: none; }
 .peso-box input { width: 52px; text-align: center; padding: 8px 4px; border: 1.5px solid var(--linea); border-radius: 9px; font: inherit; font-weight: 800; color: var(--tinta); background: var(--blanco); }
 .peso-box input:focus { outline: 2px solid var(--rojo-suave); border-color: var(--rojo); }
