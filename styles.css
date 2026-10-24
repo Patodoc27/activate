@@ -245,6 +245,15 @@ details.materia.alerta{border-left:4px solid var(--rojo)}
   padding:12px 2px}
 .leyenda b{color:var(--tinta)}
 .subt{font-size:1.05rem;margin:20px 0 10px;font-family:Georgia,serif;font-weight:700}
+.bloque-sugerida{margin-top:16px;background:var(--azul-suave);border:1.5px solid #b9cfe0;border-radius:var(--radio);padding:12px 14px}
+.bloque-sugerida .subt{margin:0 0 8px;color:var(--azul)}
+.sug-lista{max-height:300px;overflow-y:auto}
+.sug-fila{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid #d6e3ee;font-size:.9rem}
+.sug-fila:last-child{border-bottom:0}
+.sug-nom{flex:1;min-width:0;font-weight:600}
+.sug-pond{color:var(--gris);font-variant-numeric:tabular-nums}
+.sug-nota{min-width:34px;text-align:center;font-weight:800;color:var(--azul);font-size:1.02rem}
+.sug-tag{margin-left:5px;font-size:.6rem;font-weight:700;background:#fff;border:1px solid #b9cfe0;border-radius:6px;padding:1px 5px;color:var(--azul);vertical-align:middle}
 
 /* Modal */
 .modal-fondo{position:fixed;inset:0;background:rgba(31,27,24,.55);z-index:50;
@@ -355,7 +364,8 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   html,body{background:#fff!important}
   body>*:not(#print-area){display:none!important}
   #print-area{display:block!important;color:#111;font-family:'Atkinson Hyperlegible',system-ui,sans-serif}
-  .ph-head{margin-bottom:10px}
+  .ph-head{margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .ph-escudo{width:44px;height:auto;flex:none}
   .ph-brand{font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8a1f24}
   .ph-head h1{font-size:14pt;margin:2px 0 1px;font-family:'Fraunces',Georgia,serif}
   .ph-meta{font-size:8pt;color:#555}
@@ -365,6 +375,7 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   .ph-tabla .ph-alumno{text-align:left;white-space:nowrap;font-weight:600}
   .ph-tabla .ph-nota{font-weight:700}
   .ph-tabla .ph-trim{background:#f5f1ea;font-weight:700}
+  .ph-tabla .ph-grupo{background:#e7dfd2;font-weight:800;font-size:7.5pt;text-align:center;border-bottom:1pt solid #999}
   .ph-peso{font-weight:400;font-size:6.5pt;color:#555}
   .ph-tabla tbody tr{page-break-inside:avoid}
   .ph-pie{margin-top:8px;font-size:7pt;color:#666}

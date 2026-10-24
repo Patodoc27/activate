@@ -120,8 +120,9 @@ window.Views.docente = function (view, ctx) {
     return actsDelTerm().reduce(function (s, a) { return a.kind === 'mesa' ? s : s + (Number(a.weight) || 0); }, 0);
   }
   // Nota trimestre calculada: Σ(nota×peso)/Σ(peso de lo ya calificado)
-  function notaTrimestre(sid) {
-    var acts = actsDelTerm().filter(function (a) { return a.kind !== 'mesa'; }), suma = 0, pesos = 0, conDatos = false;
+  function notaTrimestre(sid, termId) {
+    var acts = state.activities.filter(function (a) { return a.term_id === (termId || state.term) && a.kind !== 'mesa'; }),
+      suma = 0, pesos = 0, conDatos = false;
     acts.forEach(function (a) {
       var g = state.grades[a.id + '_' + sid];
       if (!g || a.weight == null || a.weight === 0) return;
@@ -335,7 +336,27 @@ window.Views.docente = function (view, ctx) {
       h += '<h3 class="subt">Instancias de mesa</h3>';
       mesas.forEach(function (a) { h += filaAct(a, true); });
     }
+    if (acts.length && peso > 0) {
+      var conDato = 0, filasSug = '';
+      state.students.forEach(function (s) {
+        var nt = notaTrimestre(s.id);
+        var tg = state.termGrades[s.id + '_' + state.term];
+        var nota = tg ? tg.value : sug(nt);
+        if (nt != null) conDato++;
+        filasSug += '<div class="sug-fila"><span class="sug-nom">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</span>'
+          + '<span class="sug-pond">' + (nt != null ? pondTxt(nt) : '—') + '</span>'
+          + '<span class="sug-nota">' + (nota != null ? nota : '—') + (tg ? '<span class="sug-tag">habilitada</span>' : '') + '</span></div>';
+      });
+      if (conDato) {
+        h += '<div class="bloque-sugerida"><h3 class="subt">Nota sugerida del trimestre'
+          + ' <span class="nota">ponderación con peso ' + peso + '%' + (peso < 100 ? ' — proyecta con lo cargado' : '') + ' · redondea desde ,50</span></h3>'
+          + '<div class="sug-lista">' + filasSug + '</div>'
+          + (SOLO_LECTURA ? '' : '<button class="btn btn-mini" id="hab-lista" style="margin-top:10px">Habilitar trimestre</button>') + '</div>';
+      }
+    }
     z.innerHTML = h + '<div class="aviso" id="peso-msg" style="display:none;margin-top:8px"></div>';
+    var btnHab = z.querySelector('#hab-lista');
+    if (btnHab) btnHab.addEventListener('click', modalHabilitar);
     z.querySelectorAll('.act-btn').forEach(function (b) {
       b.addEventListener('click', function () {
         var a = state.activities.filter(function (x) { return x.id === Number(b.getAttribute('data-act')); })[0];
@@ -946,39 +967,70 @@ window.Views.docente = function (view, ctx) {
     setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
   }
 
-  function imprimir() {
-    var acts = actsDelTerm().filter(function (a) { return a.kind !== 'mesa'; });
-    var mesas = mesasDelTerm();
-    var hoy = new Date().toLocaleDateString('es-AR');
-    var h = '<div class="ph-head"><div class="ph-brand">Activate · Santo Tomás de Villanueva</div>'
-      + '<h1>' + esc(nombreMateriaSel()) + ' — ' + esc(ctx.course ? ctx.course.name : '') + '</h1>'
-      + '<div class="ph-meta">' + esc(nombreTermSel()) + ' · ' + state.students.length + ' estudiantes · ' + hoy + '</div></div>'
-      + '<table class="ph-tabla"><thead><tr><th class="ph-alumno">Estudiante</th>';
-    acts.forEach(function (a) {
-      h += '<th>' + esc(A.nombreActividad(a)) + (a.weight != null ? '<br><span class="ph-peso">' + a.weight + '%</span>' : '') + '</th>';
+  // Mesa aprobada en cualquier trimestre (para la planilla anual impresa)
+  function mesaAprobadaAnual(sid) {
+    var mesas = state.activities.filter(function (a) { return a.kind === 'mesa'; }).sort(function (x, y) {
+      var o = function (a) { var t = (a.title || '').toLowerCase(); return t.indexOf('dic') !== -1 ? 0 : (t.indexOf('feb') !== -1 ? 1 : 2); };
+      return o(x) - o(y) || x.id - y.id;
+    }), ap = null;
+    mesas.forEach(function (a) {
+      var g = state.grades[a.id + '_' + sid];
+      if (ap == null && g && g.status === 'calificada' && g.value != null && Number(g.value) >= 6) ap = g.value;
     });
-    h += '<th class="ph-trim">Trim.</th><th class="ph-trim">Final</th>';
+    return ap;
+  }
+
+  /* Imprimir: planilla completa del año (los 3 trimestres) en A4 horizontal con escudo */
+  function imprimir() {
+    var hoy = new Date().toLocaleDateString('es-AR');
+    var grupos = state.terms.slice().sort(function (a, b) { return a.id - b.id; }).map(function (t) {
+      var todas = state.activities.filter(function (a) { return a.term_id === t.id; });
+      return { t: t, acts: todas.filter(function (a) { return a.kind !== 'mesa'; }) };
+    });
+    var mesas = state.activities.filter(function (a) { return a.kind === 'mesa'; }).sort(function (x, y) {
+      var o = function (a) { var t = (a.title || '').toLowerCase(); return t.indexOf('dic') !== -1 ? 0 : (t.indexOf('feb') !== -1 ? 1 : 2); };
+      return o(x) - o(y) || x.id - y.id;
+    });
+    var h = '<div class="ph-head">'
+      + '<img class="ph-escudo" src="escudo.png" alt="Escudo Santo Tomás de Villanueva">'
+      + '<div><div class="ph-brand">Activate · Colegio Santo Tomás de Villanueva</div>'
+      + '<h1>' + esc(nombreMateriaSel()) + ' — ' + esc(ctx.course ? ctx.course.name : '') + ' · Planilla anual</h1>'
+      + '<div class="ph-meta">' + state.students.length + ' estudiantes · ' + hoy + '</div></div></div>'
+      + '<table class="ph-tabla"><thead><tr><th class="ph-alumno" rowspan="2">Estudiante</th>';
+    grupos.forEach(function (g) {
+      h += '<th class="ph-grupo" colspan="' + (g.acts.length + 1) + '">' + esc(g.t.name) + '</th>';
+    });
+    h += '<th class="ph-grupo" colspan="' + (mesas.length + 2) + '">Cierre</th></tr><tr>';
+    grupos.forEach(function (g) {
+      g.acts.forEach(function (a) {
+        h += '<th>' + esc(A.nombreActividad(a)) + (a.weight != null ? '<br><span class="ph-peso">' + a.weight + '%</span>' : '') + '</th>';
+      });
+      h += '<th class="ph-trim">Nota ' + esc(g.t.name.replace('trimestre', 'T')) + '</th>';
+    });
+    h += '<th class="ph-trim">Final</th>';
     mesas.forEach(function (a) { h += '<th>' + esc(a.title) + '</th>'; });
     h += '<th class="ph-trim">Nota Final</th></tr></thead><tbody>';
     state.students.forEach(function (s) {
       h += '<tr><td class="ph-alumno">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</td>';
-      acts.forEach(function (a) {
-        var g = state.grades[a.id + '_' + s.id];
-        h += '<td' + (g && g.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(g) + '</td>';
+      grupos.forEach(function (g) {
+        g.acts.forEach(function (a) {
+          var gr = state.grades[a.id + '_' + s.id];
+          h += '<td' + (gr && gr.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(gr) + '</td>';
+        });
+        var tg = state.termGrades[s.id + '_' + g.t.id];
+        var nt = tg ? tg.value : notaTrimestre(s.id, g.t.id);
+        h += '<td class="ph-trim">' + (nt != null ? '<b>' + Number(nt).toFixed(2).replace('.', ',') + '</b>' : '—') + '</td>';
       });
-      var tg = state.termGrades[s.id + '_' + state.term];
-      var nt = tg ? tg.value : notaTrimestre(s.id);
-      h += '<td class="ph-trim">' + (nt != null ? '<b>' + Number(nt).toFixed(2).replace('.', ',') + '</b>' : '—') + '</td>';
       h += '<td class="ph-trim">' + (state.finals[s.id] != null ? '<b>' + state.finals[s.id] + '</b>' : '—') + '</td>';
       mesas.forEach(function (a) {
-        var g = state.grades[a.id + '_' + s.id];
-        h += '<td' + (g && g.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(g) + '</td>';
+        var gr = state.grades[a.id + '_' + s.id];
+        h += '<td' + (gr && gr.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(gr) + '</td>';
       });
-      var cierre = cierreFinal(s.id);
+      var cierre = state.cierres[s.id] != null ? state.cierres[s.id] : mesaAprobadaAnual(s.id);
       h += '<td class="ph-trim">' + (cierre != null ? '<b>' + cierre + '</b>' : '—') + '</td></tr>';
     });
     h += '</tbody></table><div class="ph-pie">Pend. = pendiente de entrega · No pres. = no presentado · — = sin calificar · '
-      + 'Trim. calculada por peso (total ' + pesoTotal() + '%)</div>';
+      + 'La nota de cada trimestre se calcula por peso; la Nota Final es el cierre del año (mesa aprobada o carga del docente).</div>';
     var z = document.getElementById('print-area');
     if (!z) { z = document.createElement('div'); z.id = 'print-area'; document.body.appendChild(z); }
     z.innerHTML = h;
