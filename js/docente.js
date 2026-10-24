@@ -533,20 +533,22 @@ window.Views.docente = function (view, ctx) {
         + '<div class="titulo">' + esc(cap(A.nombreActividad(a))) + '</div>'
         + '<div class="meta" data-meta-fecha>' + metaTxt + '</div></div>'
         + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><path d="M9 18l6-6-6-6"/></svg></button>';
+      var ed = '';
       if (!SOLO_LECTURA) {
-        r += '<input class="fecha-ed" type="date" data-fecha="' + a.id + '" value="' + (a.due_date || '') + '"'
+        ed += '<input class="fecha-ed" type="date" data-fecha="' + a.id + '" value="' + (a.due_date || '') + '"'
           + ' title="Fecha de cierre — se muestra a estudiantes y familias" aria-label="Fecha de cierre de ' + esc(a.title) + '">';
       }
       if (!esMesa) {
         if (SOLO_LECTURA) {
-          r += '<div class="peso-box" style="justify-content:center"><span>'
+          ed += '<div class="peso-box" style="justify-content:center"><span>'
             + (a.weight != null ? a.weight + '%' : '—') + '</span></div>';
         } else {
-          r += '<div class="peso-box"><input type="number" min="0" max="100" step="1" inputmode="numeric"'
+          ed += '<div class="peso-box"><input type="number" min="0" max="100" step="1" inputmode="numeric"'
             + ' data-peso="' + a.id + '" value="' + (a.weight != null ? a.weight : '') + '" placeholder="—"'
             + ' aria-label="Peso de ' + esc(a.title) + '"><span>%</span></div>';
         }
       }
+      if (ed) r += '<div class="fila-ed">' + ed + '</div>';
       return r + '</div>';
     }
     if (!acts.length) h += '<div class="vacio" style="padding:18px">Solo hay instancias de mesa en este trimestre.</div>';
