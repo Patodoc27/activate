@@ -181,7 +181,7 @@
   }
 
   /* ---------- Selector de curso (2ª pantalla del acceso) ---------- */
-  var ROL_ELIGE_CURSO = { docente: 1, familia: 1 };
+  var ROL_ELIGE_CURSO = { docente: 1, familia: 1, preceptor: 1 };
 
   function cursoGuardado(userId) {
     try { return Number(sessionStorage.getItem('curso-' + userId)) || null; }
@@ -194,7 +194,7 @@
         var cursos = r.data || [];
         var html = '<div class="pick-wrap"><div class="pick-head">' + escudoIMG
           + '<h2>¿Qué curso?</h2>'
-          + '<div class="sub">Elegí el curso para ver sus materias y estudiantes — ' + esc(account.role === 'docente' ? 'así te quedan solo tus materias de esa división' : 'así ves a tu hijo aunque haya otro con el mismo nombre en otro curso') + '</div></div>'
+          + '<div class="sub">Elegí el curso para ver sus materias y estudiantes — ' + esc(account.role === 'docente' ? 'así te quedan solo las materias de esa división' : 'así ves a tu hijo aunque haya otro con el mismo nombre en otro curso') + '</div></div>'
           + '<div class="pick-grid" id="grid"></div>'
           + '<div class="pick-pie"><button class="btn-salir" id="pick-salir" style="color:var(--tinta);border-color:var(--linea-fuerte)">Salir</button></div></div>';
         app.innerHTML = html;
@@ -242,7 +242,9 @@
         pickCourse(account, user, function (c) { entrar(account, user, c); });
       });
     }
-    var fn = Views[account.role] || Views.familia;
+    var rol = account.role === 'preceptor' ? 'docente' : account.role;
+    ctx.readonly = account.role === 'preceptor';
+    var fn = Views[rol] || Views.familia;
     fn(view, ctx);
   }
 
