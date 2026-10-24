@@ -485,3 +485,17 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
 .act-btn-cal:hover .titulo { color: var(--rojo); }
 .entrega.eval { border-color: var(--rojo); background: var(--rojo-suave); }
 .entrega.eval .cal { background: var(--rojo); color: #fff; }
+
+/* Panel de supervisión (preceptor/dirección): barra aprendidos vs desaprobados */
+.panel-card{display:block;width:100%;text-align:left;cursor:pointer;margin-bottom:12px;
+  transition:transform .12s,box-shadow .15s}
+.panel-card:hover{transform:translateY(-2px);box-shadow:var(--sombra-alta);border-color:var(--ambre)}
+.panel-card:active{transform:translateY(0)}
+.panel-nom{font-family:Georgia,serif;font-weight:800;font-size:1.08rem;margin-bottom:9px;color:var(--tinta)}
+.panel-bar{height:15px;border-radius:8px;overflow:hidden;display:flex;background:var(--crema)}
+.panel-bar .pb-apr{background:var(--azul)}
+.panel-bar .pb-des{background:var(--rojo)}
+.panel-bar .pb-vacia{flex:1;background:repeating-linear-gradient(135deg,#ece4d6 0 8px,#f5efe3 8px 16px)}
+.panel-det{margin-top:8px;font-size:.82rem;color:var(--gris)}
+.panel-det b{color:var(--tinta)}
+.panel-vacia .panel-nom{color:var(--gris)}

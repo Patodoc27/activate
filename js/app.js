@@ -182,7 +182,7 @@
   }
 
   /* ---------- Selector de curso (2ª pantalla del acceso) ---------- */
-  var ROL_ELIGE_CURSO = { docente: 1, familia: 1, preceptor: 1 };
+  var ROL_ELIGE_CURSO = { docente: 1, familia: 1, preceptor: 1, direccion: 1 };
 
   function cursoGuardado(userId) {
     try { return Number(sessionStorage.getItem('curso-' + userId)) || null; }
@@ -278,8 +278,9 @@
         pickCourse(account, user, function (c) { entrar(account, user, c); });
       });
     }
-    var rol = account.role === 'preceptor' ? 'docente' : account.role;
-    ctx.readonly = account.role === 'preceptor';
+    var soloLectura = account.role === 'preceptor' || account.role === 'direccion';
+    var rol = soloLectura ? 'docente' : account.role;
+    ctx.readonly = soloLectura;
     var fn = Views[rol] || Views.familia;
     fn(view, ctx);
   }

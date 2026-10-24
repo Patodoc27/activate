@@ -112,7 +112,7 @@ window.Views.docente = function (view, ctx) {
       if (!state.term && state.terms.length) state.term = state.terms[0].id;
       if (!state.subjects.filter(function (s) { return s.ids.join(',') === state.subject; }).length)
         state.subject = state.subjects[0].ids.join(',');
-      if (state.resumen) dibujarResumen(); else cargarMateria();
+      if (state.resumen) { if (SOLO_LECTURA) dibujarPanel(); else dibujarResumen(); } else cargarMateria();
     });
   }
 
@@ -240,6 +240,71 @@ window.Views.docente = function (view, ctx) {
         var z = view.querySelector('#resumen-cards');
         if (z) z.innerHTML = html;
       });
+    });
+  }
+
+  /* Panel de supervisión (preceptor / dirección): elegí el trimestre,
+     cada materia con su barra de aprobados vs desaprobados; tocá para entrar */
+  function dibujarPanel() {
+    var termOrden = state.terms.slice().sort(function (a, b) { return a.id - b.id; });
+    if (!state.term && termOrden.length) state.term = termOrden[0].id;
+    view.innerHTML = '<div class="seccion-titulo"><h2>Estadísticas por materia</h2>'
+      + '<span class="nota">' + esc(ctx.course ? ctx.course.name : '') + ' · elegí el trimestre y tocá una materia</span></div>'
+      + '<div class="pills" id="pills-t"></div>'
+      + '<div id="panel-lista"><div class="vacio">Cargando estadísticas…</div></div>';
+    var pills = view.querySelector('#pills-t');
+    termOrden.forEach(function (t) {
+      var b = el('button', 'pill' + (t.id === state.term ? ' activa' : ''));
+      b.textContent = t.name.replace(/\s*trimestre/i, ' T');
+      b.addEventListener('click', function () { state.term = t.id; dibujarPanel(); });
+      pills.appendChild(b);
+    });
+    var todos = [];
+    state.subjects.forEach(function (s) { todos = todos.concat(s.ids); });
+    Promise.all([
+      sb.from('term_grades').select('student_id,subject_id,value')
+        .in('subject_id', todos).eq('term_id', state.term).limit(5000),
+      sb.from('enrollments').select('student_id,subject_id').in('subject_id', todos).limit(5000),
+      sb.from('activities').select('id,subject_id,kind')
+        .in('subject_id', todos).eq('term_id', state.term).limit(2000)
+    ]).then(function (rs) {
+      var cierres = rs[0].data || [], enr = rs[1].data || [], acts = rs[2].data || [];
+      var lista = view.querySelector('#panel-lista');
+      if (!lista) return;
+      lista.innerHTML = '';
+      state.subjects.forEach(function (s) {
+        var alumnos = {};
+        enr.forEach(function (e) { if (s.ids.indexOf(e.subject_id) !== -1) alumnos[e.student_id] = 1; });
+        var nAlu = Object.keys(alumnos).length;
+        var notas = cierres.filter(function (c) { return s.ids.indexOf(c.subject_id) !== -1; });
+        var apr = notas.filter(function (n) { return n.value >= 6; }).length;
+        var des = notas.length - apr;
+        var nActs = acts.filter(function (a) {
+          return s.ids.indexOf(a.subject_id) !== -1 && a.kind !== 'mesa';
+        }).length;
+        var pApr = notas.length ? Math.round(apr / notas.length * 100) : 0;
+        var card = el('button', 'card panel-card' + (notas.length ? '' : ' panel-vacia'));
+        card.innerHTML = '<div class="panel-nom">' + esc(s.nombre) + '</div>'
+          + '<div class="panel-bar">'
+          + (notas.length
+            ? '<span class="pb-apr" style="width:' + pApr + '%"></span>'
+              + '<span class="pb-des" style="width:' + (100 - pApr) + '%"></span>'
+            : '<span class="pb-vacia"></span>')
+          + '</div>'
+          + '<div class="panel-det">'
+          + (notas.length
+            ? '<b>' + apr + '</b> aprobados · <b>' + des + '</b> desaprobados · ' + pApr + '% aprobación'
+            : 'aún sin nota de cierre en este trimestre')
+          + ' · ' + nAlu + ' estudiantes · ' + nActs + ' actividades</div>';
+        card.addEventListener('click', function () {
+          state.subject = s.ids.join(',');
+          state.resumen = false;
+          cargarMateria();
+        });
+        lista.appendChild(card);
+      });
+      if (!state.subjects.length)
+        lista.innerHTML = '<div class="vacio">No hay materias en este curso.</div>';
     });
   }
 
