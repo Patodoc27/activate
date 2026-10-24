@@ -499,3 +499,26 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
 .panel-det{margin-top:8px;font-size:.82rem;color:var(--gris)}
 .panel-det b{color:var(--tinta)}
 .panel-vacia .panel-nom{color:var(--gris)}
+
+/* Alerta de estudiantes (preceptor/dirección) */
+.btn-alerta{display:flex;align-items:center;gap:8px;width:100%;justify-content:center;
+  margin:4px 0 16px;padding:13px 16px;border-radius:12px;cursor:pointer;
+  border:1.5px solid var(--rojo);background:var(--rojo-suave);color:var(--rojo-osc);
+  font-weight:800;font-size:.95rem;transition:background .15s}
+.btn-alerta:hover{background:#f3ddd6}
+.btn-alerta .ico{flex:none}
+.busca{width:100%;box-sizing:border-box;margin-bottom:14px;padding:11px 14px;
+  border:1.5px solid var(--linea-fuerte);border-radius:12px;font-size:.95rem;background:#fff}
+.busca:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px var(--rojo-suave)}
+.alerta-tot{font-size:.85rem;font-weight:700;color:var(--gris);margin-bottom:12px}
+.alerta-card{display:block;margin-bottom:12px}
+.alerta-nom{font-weight:800;font-size:1.02rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.alerta-count{font-size:.72rem;font-weight:800;background:var(--rojo);color:#fff;
+  border-radius:99px;padding:3px 10px;text-transform:uppercase;letter-spacing:.04em}
+.alerta-mat{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:9px;
+  padding-top:9px;border-top:1px dashed var(--linea)}
+.alerta-matnom{font-weight:700;font-size:.88rem;color:var(--tinta);min-width:110px}
+.chip-al{font-size:.75rem;font-weight:700;border-radius:8px;padding:4px 9px;display:inline-block;margin:2px 0}
+.chip-al.rojo{background:#f7e2de;color:var(--rojo-osc);border:1px solid #e0b3ad}
+.chip-al.ambre{background:var(--ambre-suave);color:#8a5508;border:1px solid #e8c98f}
+.chip-al.gris{background:#efeae1;color:var(--gris);border:1px solid var(--linea-fuerte)}
