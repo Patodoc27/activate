@@ -660,9 +660,7 @@ window.Views.docente = function (view, ctx) {
       + '<th class="col-alumno alumno">Estudiante</th>';
     acts.forEach(function (a) {
       html += '<th class="num"><button class="th-act" data-edit="' + a.id + '" title="'
-        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(A.nombreActividad(a)) + '</span>'
-        + '<span class="t2">' + (a.weight != null ? a.weight + '%' : 'sin peso')
-        + (a.due_date ? ' · ' + A.textoDias(a.due_date) : '') + '</span></button></th>';
+        + esc(a.description || 'Editar actividad') + '"><span class="t1">' + esc(A.nombreActividad(a)) + '</span></button></th>';
     });
     var nomTrim = (state.terms.filter(function (t) { return t.id === state.term; })[0] || { name: 'Trimestre' }).name;
     html += '<th class="num">' + esc(nomTrim) + '<br><span style="font-weight:400;font-size:.68rem;opacity:.75">calculada</span></th>'
