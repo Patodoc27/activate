@@ -231,7 +231,13 @@
         cursos.forEach(function (c) {
           var b = el('button', 'pick-btn');
           var p = c.name.split(' ');
-          b.innerHTML = '<span class="anio">' + esc(p[0]) + '</span><span class="div">' + esc(p.slice(1).join(' ')) + '</span>';
+          var anios = { '1°': 'primer', '2°': 'segundo', '3°': 'tercer', '4°': 'cuarto', '5°': 'quinto', '6°': 'sexto', '7°': 'séptimo' };
+          var texto = (anios[p[0]] || p[0]) + ' año · división ' + p.slice(1).join(' ');
+          b.innerHTML = '<span class="pk-arco"></span>'
+            + '<span class="pk-fila"><span class="pk-anio">' + esc(p[0]) + '</span>'
+            + '<span class="pk-div">' + esc(p.slice(1).join(' ')) + '</span></span>'
+            + '<span class="pk-txt">' + esc(texto) + '</span>'
+            + '<span class="pk-flecha"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 4l8 8-8 8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
           b.addEventListener('click', function () {
             try { sessionStorage.setItem('curso-' + user.id, String(c.id)); } catch (e) {}
             cb(c);

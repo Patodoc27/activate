@@ -11,56 +11,56 @@ window.Views.docente = function (view, ctx) {
   /* Frases motivadoras: se muestran al azar al ingresar, el tiempo de lectura
      se calcula por palabras y entra solo a la materia */
   var FRASES = [
-    { t: 'Educar es sembrar en tierra fértil y confiar en que cada semilla tiene su tiempo.', a: '' },
+    { t: 'Buen día. Hoy algún estudiante va a entender algo por primera vez gracias a tu manera de explicarlo. Que ese pensamiento te acompañe toda la jornada.', a: '' },
+    { t: 'Los pueblos se degradan donde se descuida la educación. Lo que hacés hoy en el aula sostiene mucho más que un programa.', a: 'Domingo Faustino Sarmiento' },
+    { t: 'Educar es un acto de amor, por eso es un acto de valor: nadie se anima a hacerlo si teme dejar de ser centro del mundo.', a: 'Paulo Freire' },
+    { t: 'Un niño, un docente, un libro y una lapicera pueden cambiar el mundo. Y ese cambio puede empezar hoy.', a: 'Malala Yousafzai' },
+    { t: 'La educación no es llenar un balde, sino encender un fuego. Hoy hay fogatas por prender.', a: 'William Butler Yeats' },
+    { t: 'Educar la mente sin educar el corazón no es educar en absoluto. Los chicos también aprenden de cómo los miramos.', a: 'Aristóteles' },
     { t: 'Todo el mundo es un genio. Pero si juzgas a un pez por su habilidad de trepar árboles, vivirá creyendo que es inútil.', a: 'atribuida a Albert Einstein' },
-    { t: 'La educación no es llenar un balde, sino encender un fuego.', a: 'William Butler Yeats' },
-    { t: 'Enseñar es tocar una vida para siempre.', a: '' },
-    { t: 'Un buen docente puede inspirar esperanza, encender la imaginación e infundir amor por el aprendizaje.', a: 'Brad Henry' },
-    { t: 'No hay alumno difícil: hay chicos que necesitan que alguien crea en ellos.', a: '' },
-    { t: 'La educación es el arma más poderosa que puedes usar para cambiar el mundo.', a: 'Nelson Mandela' },
-    { t: 'Dime y lo olvido, enséñame y lo recuerdo, involúcrame y lo aprendo.', a: 'Benjamin Franklin' },
-    { t: 'Cada clase es una oportunidad de cambiar el rumbo de un chico.', a: '' },
-    { t: 'El arte de enseñar es el arte de ayudar a descubrir.', a: 'Mark Van Doren' },
-    { t: 'Detrás de cada estudiante hay una historia que merece ser escuchada.', a: '' },
-    { t: 'Un docente deja huella en la eternidad: nunca sabe dónde termina su influencia.', a: 'Henry Adams' },
-    { t: 'Enseñar no es transferir conocimiento, es crear las condiciones para que el otro aprenda.', a: '' },
-    { t: 'Los chicos no recuerdan lo que enseñaste; recuerdan cómo los hiciste sentir.', a: '' },
-    { t: 'Quien se anima a enseñar no debe dejar de aprender.', a: 'John Cotton Dana' },
-    { t: 'La paciencia es la materia prima de todo docente.', a: '' },
-    { t: 'Enseñar es creer que cada estudiante puede más de lo que cree.', a: '' },
-    { t: 'El mejor docente es el que va sugiriendo el camino y deja que el alumno lo encuentre.', a: '' },
-    { t: 'La educación es lo que sobrevive cuando lo enseñado se ha olvidado.', a: 'B. F. Skinner' },
-    { t: 'Un aula es el lugar donde el futuro empieza a construirse.', a: '' },
-    { t: 'No enseñes lo que sabés: enseñá para que el otro pueda saber.', a: '' },
-    { t: 'El docente mediocre cuenta. El bueno explica. El excelente inspira.', a: 'William Arthur Ward' },
-    { t: 'Cada estudiante tiene algo que enseñarnos si estamos dispuestos a escuchar.', a: '' },
-    { t: 'La vocación docente se ve en las ganas de volver al aula cada día.', a: '' },
-    { t: 'Educar la mente sin educar el corazón no es educar en absoluto.', a: 'Aristóteles' },
-    { t: 'Lo que se enseña con pasión se aprende con ganas.', a: '' },
-    { t: 'Un buen docente convierte las preguntas difíciles en las mejores clases.', a: '' },
-    { t: 'La escuela es el lugar donde los sueños toman forma de proyecto.', a: '' },
-    { t: 'Nunca subestimes el poder de una palabra tuya en el momento justo.', a: '' },
-    { t: 'Enseñar es el arte de hacer posible lo que parece imposible.', a: '' },
-    { t: 'El buen docente siembra con la frente en alto y no se rinde con ninguna semilla.', a: '' },
-    { t: 'Aprendemos mejor lo que descubrimos por nosotros mismos.', a: '' },
-    { t: 'La curiosidad de un estudiante es el mejor plan de estudios.', a: '' },
-    { t: 'Hay chicos que solo necesitan que un adulto les diga: yo sé que podés.', a: '' },
-    { t: 'La enseñanza es una carrera de fondo: los frutos se ven años después.', a: '' },
-    { t: 'Cada nota que corregís es también una conversación con tu estudiante.', a: '' },
-    { t: 'El aula es más fuerte cuando el error se convierte en pregunta.', a: '' },
-    { t: 'No hay enseñanza pequeña: todo lo que sembrás puede crecer.', a: '' },
-    { t: 'La mejor herencia que deja un docente es la confianza en aprender.', a: '' },
-    { t: 'Enseñar con el corazón transforma más que enseñar solo con la razón.', a: '' },
-    { t: 'Un docente cambia el mundo estudiante por estudiante, clase por clase.', a: '' },
-    { t: 'El conocimiento se comparte, la pasión por aprender se contagia.', a: '' },
-    { t: 'Los buenos docentes construyen puentes donde otros ven abismos.', a: '' },
-    { t: 'Tu paciencia de hoy es la seguridad de ellos mañana.', a: '' },
-    { t: 'Enseñar es también aprender todos los días de tus estudiantes.', a: '' },
-    { t: 'El entusiasmo del docente es el primer material didáctico del aula.', a: '' },
-    { t: 'Quien enseña con verdad deja marca mucho más allá del aula.', a: '' },
-    { t: 'Cada clase es una nueva oportunidad de encender una chispa.', a: '' },
-    { t: 'Los chicos crecen con lo que les mostramos que creemos de ellos.', a: '' },
-    { t: 'Educar es acompañar el descubrimiento, no llenar un formulario.', a: '' }
+    { t: 'Mientras enseñamos, aprendemos. Hoy los estudiantes también tienen algo para enseñarte: dejales la puerta abierta.', a: 'Séneca' },
+    { t: 'La mente no es un vaso que hay que llenar, sino una madera que hay que encender. Que hoy salga la chispa.', a: 'Plutarco' },
+    { t: 'La educación es el arma más poderosa que puedes usar para cambiar el mundo. La tenés en la mano todas las mañanas.', a: 'Nelson Mandela' },
+    { t: 'Dime y lo olvido, enséñame y lo recuerdo, involúcrame y lo aprendo. Hoy es un buen día para involucrarlos.', a: 'Benjamin Franklin' },
+    { t: 'Un docente deja huella en la eternidad: nunca sabe dónde termina su influencia. Lo de hoy puede llegar más lejos de lo que imaginás.', a: 'Henry Adams' },
+    { t: 'El docente mediocre cuenta. El bueno explica. El excelente inspira. Hoy se puede aspirar a inspirar.', a: 'William Arthur Ward' },
+    { t: 'El arte de enseñar es el arte de ayudar a descubrir. Reservales el descubrimiento, no solo la respuesta.', a: 'Mark Van Doren' },
+    { t: 'Quien se anima a enseñar no debe dejar de aprender. Entrá al aula también con curiosidad.', a: 'John Cotton Dana' },
+    { t: 'La educación es lo que sobrevive cuando lo enseñado se ha olvidado. Hoy construís lo que se queda.', a: 'B. F. Skinner' },
+    { t: 'La tarea del educador moderno no es cortar junglas, sino regar desiertos. Hay desiertos esperándote.', a: 'C. S. Lewis' },
+    { t: 'Enseñar es tocar una vida para siempre. Hoy puede ser uno de esos días que un estudiante recuerde dentro de veinte años.', a: '' },
+    { t: 'Nadie aprende de alguien que no respete. Antes de abrir el cuaderno, abrí el vínculo: eso también se enseña.', a: '' },
+    { t: 'Cada chico trae hoy una historia que vos no conocés. La primera clase empieza mucho antes de la primera palabra.', a: '' },
+    { t: 'Los estudiantes no recuerdan cada contenido; recuerdan quién creyó en ellos cuando nadie más lo hacía. Hoy podés ser ese quién.', a: '' },
+    { t: 'La buena enseñanza no convierte al más débil en el mejor: hace que cada uno dé más de lo que él mismo creía posible.', a: '' },
+    { t: 'Hay mañanas en que el aula parece un semillero que no florece. El docente sabe que está creciendo igual, por debajo de la tierra.', a: '' },
+    { t: 'Un error hoy es un aprendizaje mañana, tuyo y de ellos. Que el aula sea el lugar seguro para equivocarse.', a: '' },
+    { t: 'El mejor momento para creer en un estudiante es cuando dejó de creer en sí mismo. Alguien te está esperando hoy con eso.', a: '' },
+    { t: 'No enseñamos contenidos: enseñamos personas a través de contenidos. El orden importa, siempre.', a: '' },
+    { t: 'La paciencia docente no es esperar quieto: es volver a intentar de mil maneras hasta que el otro lo vea.', a: '' },
+    { t: 'El conocimiento que se comparte con generosidad es el único que se multiplica. Hoy repartís sin gastarte.', a: '' },
+    { t: 'Quien enseña con el ejemplo enseña dos veces. Tu forma de llegar ya es una clase antes del primer tema.', a: '' },
+    { t: 'El niño no es una botella que hay que llenar sino un fuego que hay que encender. Con eso arrancamos.', a: 'François Rabelais' },
+    { t: 'Dentro de cada niño hay un adulto posible. La escuela decide qué tan posible termina siendo.', a: 'María Montessori, en espíritu' },
+    { t: 'Enseñar no es transferir conocimiento, es crear las posibilidades para producirlo. Hoy creás posibilidades.', a: 'Paulo Freire' },
+    { t: 'Solo la educación libera al hombre de la herencia, del medio y del momento. Nadie te paga lo suficiente por eso; se hace por vocación.', a: '' },
+    { t: 'Cada respuesta equivocada en el aula es un intento honesto, no un fracaso. Celebrá el intento y corregí con dignidad.', a: '' },
+    { t: 'Los docentes somos arquitectos de futuros que no vamos a habitar. Hoy colocás ladrillos que otros van a pisar.', a: '' },
+    { t: 'Lo importante no es llegar a todos con la misma palabra, sino encontrar la palabra que llegue a cada uno.', a: '' },
+    { t: 'Un estudiante que pregunta incómodo es un estudiante que piensa. Que hoy pregunten incómodo: es señal de vida.', a: '' },
+    { t: 'Enseñar es decirle a alguien que puede, tantas veces, que un día empieza a poder solo. Seguí diciéndolo.', a: '' },
+    { t: 'El silencio del aula que piensa vale más que cien respuestas memorizadas. Provocá ese silencio.', a: '' },
+    { t: 'Hay días en que enseñás y días en que transformás. No siempre sabés cuál es cuál: tratá cada día como el segundo.', a: '' },
+    { t: 'La escuela no prepara para la vida: la escuela ya es la vida, ahora mismo, en tu aula, esta mañana.', a: 'John Dewey' },
+    { t: 'El sabio no enseña con las palabras sino con sus obras. Lo que modelás pesa más que lo que decís.', a: 'Lao Tse' },
+    { t: 'Buen comienzo de jornada: hoy el mundo puede girar un poquito mejor porque alguien aprendió algo en tu aula.', a: '' },
+    { t: 'El mayor elogio del docente es el estudiante que un día ya no lo necesita. Trabajás para quedar prescindible.', a: '' },
+    { t: 'Aprender sin reflexionar es malgastar la energía. Enseñar sin reflexionar es gastar la de ellos. Un minuto de silencio antes de entrar ayuda.', a: 'inspirada en Confucio' },
+    { t: 'La primera tarea del educador es agitar la vida interior del estudiante, y dejarla agitada. Que hoy se lleven inquietud sana.', a: 'inspirada en Margaret Mead' },
+    { t: 'Los chicos aprenden lo que viven: si aprenden respeto, sabrán respetar; si aprenden confianza, sabrán confiar. El clima del aula también es un programa.', a: '' },
+    { t: 'Nada es imposible para quien está dispuesto a aprender. Hoy se lo recordás con cada ejemplo.', a: '' },
+    { t: 'Educar no es dar respuestas: es sostener buenas preguntas hasta que el otro pueda buscar sus propias respuestas.', a: '' },
+    { t: 'El que se atreve a enseñar no debe dejar de aprender. Hoy entrás también como estudiante.', a: '' }
   ];
 
   function mostrarFrase() {
@@ -309,10 +309,14 @@ window.Views.docente = function (view, ctx) {
     });
     return ap;
   }
-  // Cierre del año: la nota cargada por el docente o, si aún no la cargó, la mesa aprobada
+  // Cierre del año: la nota cargada por el docente, la mesa aprobada,
+  // o el promedio de trimestres cuando supera 5,5
   function cierreFinal(sid) {
     if (state.cierres[sid] != null) return state.cierres[sid];
-    return mesaAprobada(sid);
+    var ap = mesaAprobada(sid);
+    if (ap != null) return ap;
+    var p = promFinal(sid);
+    return p != null && p > 5.5 ? Math.max(1, Math.round(p)) : null;
   }
   function pesoTotal() {
     return actsDelTerm().reduce(function (s, a) { return a.kind === 'mesa' ? s : s + (Number(a.weight) || 0); }, 0);
@@ -337,6 +341,30 @@ window.Views.docente = function (view, ctx) {
   // Ponderación con 2 decimales y nota sugerida (redondea hacia arriba desde ,50)
   function pondTxt(nt) { return nt != null ? nt.toFixed(2).replace('.', ',') : ''; }
   function sug(nt) { return nt != null ? Math.max(1, Math.round(nt)) : null; }
+  // Nota de trimestre efectiva: la habilitada por el docente o la sugerida
+  function notaTrimEfectiva(sid, termId) {
+    var tg = state.termGrades[sid + '_' + termId];
+    if (tg && tg.value != null) return Number(tg.value);
+    var nt = notaTrimestre(sid, termId);
+    return nt != null ? sug(nt) : null;
+  }
+  // Promedio del año: promedio de las notas de trimestre disponibles
+  function promFinal(sid) {
+    var ns = [];
+    state.terms.forEach(function (t) {
+      var n = notaTrimEfectiva(sid, t.id);
+      if (n != null) ns.push(n);
+    });
+    if (!ns.length) return null;
+    return ns.reduce(function (a, b) { return a + b; }, 0) / ns.length;
+  }
+  // Final efectiva: la cargada por el docente o el promedio redondeado
+  function finalEfectiva(sid) {
+    var f = state.finals[sid];
+    if (f != null) return f;
+    var p = promFinal(sid);
+    return p != null ? Math.max(1, Math.round(p)) : null;
+  }
 
   function dibujar() {
     var acts = actsDelTerm();
@@ -366,7 +394,7 @@ window.Views.docente = function (view, ctx) {
       + '<div id="lista"></div>'
       + '<div id="zona-planilla"' + (state.verPlanilla ? '' : ' class="oculta"') + '></div>'
       + '<div class="leyenda"><span><b>0</b> = pendiente de entrega</span><span><b>1</b> = no presentado</span>'
-      + '<span><b>—</b> = sin calificación</span><span><b>Trim.</b> se calcula por peso; la <b>Final</b> la carga el docente.</span></div>';
+      + '<span><b>—</b> = sin calificación</span><span><b>Trim.</b> se calcula por peso; la <b>Final</b> es el promedio de trimestres (editable a mano).</span></div>';
 
     var pills = view.querySelector('#pills');
     state.subjects.forEach(function (s) {
@@ -508,7 +536,7 @@ window.Views.docente = function (view, ctx) {
       var deben = 0;
       if (esMesa) {
         state.students.forEach(function (s) {
-          var f = state.finals[s.id];
+          var f = finalEfectiva(s.id);
           if (f != null && Number(f) < 6) deben++;
         });
       }
@@ -658,11 +686,13 @@ window.Views.docente = function (view, ctx) {
           ? '<b style="font-size:1.05rem">' + tg.value + '</b>' + (tg.computed != null && Math.abs(Number(tg.computed) - Number(tg.value)) > 0.001 ? '<br><span style="font-size:.66rem;color:var(--gris)">pond ' + pondTxt(Number(tg.computed)) + '</span>' : '')
           : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + pondTxt(nt) + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">sugiere <b>' + sug(nt) + '</b></span>' : '<span style="color:var(--gris-claro)">—</span>'))
         + '</td>';
-      var f = state.finals[s.id];
+      var f = state.finals[s.id], fe = finalEfectiva(s.id), p = promFinal(s.id);
       html += '<td class="num">' + (SOLO_LECTURA
-        ? '<span class="nota-ro">' + (f == null ? '—' : f) + '</span>'
-        : '<input class="nota" type="number" min="2" max="10" step="1" inputmode="numeric" value="'
-        + (f == null ? '' : f) + '" data-final="' + s.id + '" aria-label="Nota final de ' + esc(s.last_name) + '">') + '</td>';
+        ? '<span class="nota-ro">' + (fe == null ? '—' : fe) + '</span>'
+        : '<input class="nota' + (f == null && fe != null ? ' nota-sug' : '') + '" type="number" min="2" max="10" step="1" inputmode="numeric" value="'
+        + (fe == null ? '' : fe) + '" data-final="' + s.id + '" aria-label="Nota final de ' + esc(s.last_name) + '"'
+        + (p != null ? ' title="Promedio de trimestres: ' + pondTxt(p) + '"' : '') + '>'
+        + (f == null && p != null ? '<div class="fin-sug">pond ' + pondTxt(p) + '</div>' : '')) + '</td>';
       mesas.forEach(function (a) {
         var g = state.grades[a.id + '_' + s.id];
         var v = g && g.status === 'calificada' ? g.value : '';
@@ -748,7 +778,7 @@ window.Views.docente = function (view, ctx) {
     var lista = state.students;
     if (esMesa) {
       lista = state.students.filter(function (s) {
-        var f = state.finals[s.id];
+        var f = finalEfectiva(s.id);
         return f != null && Number(f) < 6;
       });
     }
@@ -759,7 +789,7 @@ window.Views.docente = function (view, ctx) {
       var v = g && g.status === 'calificada' && g.value != null ? g.value : '';
       filas += '<div class="fila-act" data-sid="' + s.id + '"><div class="info"><div class="titulo">'
         + esc(s.last_name) + ', ' + esc(s.first_name)
-        + (esMesa ? ' <span class="chip" style="margin-left:6px">final ' + esc(String(state.finals[s.id])) + '</span>' : '')
+        + (esMesa ? ' <span class="chip" style="margin-left:6px">final ' + esc(String(finalEfectiva(s.id))) + '</span>' : '')
         + '</div></div>'
         + (SOLO_LECTURA
           ? '<span class="nota-ro nf-ro">' + (st === 'calificada' && v !== '' ? v : (st === 'pendiente' ? '0 pend.' : (st === 'no_presentado' ? '1 no pres.' : '—'))) + '</span>'
@@ -770,7 +800,7 @@ window.Views.docente = function (view, ctx) {
           + ' placeholder="1-10" value="' + v + '"' + (st === 'calificada' ? '' : ' disabled') + '>') + '</div>';
     });
     var avisoIni = esMesa
-      ? '<div class="aviso info">' + A.icon('alerta') + '<div>Aparecen solo los estudiantes con <b>nota final menor a 6</b>. Si todos aprobaron, la lista queda vacía.</div></div>'
+      ? '<div class="aviso info">' + A.icon('alerta') + '<div>Aparecen solo los estudiantes con <b>nota final menor a 6</b> (la cargada a mano o el promedio de trimestres). Si todos aprobaron, la lista queda vacía.</div></div>'
       : (SOLO_LECTURA ? '' : '<div class="aviso info">' + A.icon('lapiz') + '<div>Notas del <b>1 al 10</b> en pasos de medio punto '
         + '(7, 7.5, 8…). Pendiente y No presentado se eligen en la lista de cada estudiante.</div></div>');
     if (esMesa && !lista.length) {
@@ -1176,7 +1206,7 @@ window.Views.docente = function (view, ctx) {
       var tg = state.termGrades[s.id + '_' + state.term];
       var nt = tg ? tg.value : notaTrimestre(s.id);
       fila.push(nt != null ? Number(nt).toFixed(2).replace('.', ',') : '');
-      fila.push(state.finals[s.id] != null ? String(state.finals[s.id]).replace('.', ',') : '');
+      fila.push(finalEfectiva(s.id) != null ? String(finalEfectiva(s.id)).replace('.', ',') : '');
       mesas.forEach(function (a) {
         var g = state.grades[a.id + '_' + s.id];
         fila.push(g && g.status === 'calificada' && g.value != null ? String(g.value).replace('.', ',') : '');
@@ -1250,12 +1280,13 @@ window.Views.docente = function (view, ctx) {
         var nt = tg ? tg.value : notaTrimestre(s.id, g.t.id);
         h += '<td class="ph-trim">' + (nt != null ? '<b>' + Number(nt).toFixed(2).replace('.', ',') + '</b>' : '—') + '</td>';
       });
-      h += '<td class="ph-trim">' + (state.finals[s.id] != null ? '<b>' + state.finals[s.id] + '</b>' : '—') + '</td>';
+      h += '<td class="ph-trim">' + (finalEfectiva(s.id) != null ? '<b>' + finalEfectiva(s.id) + '</b>' : '—') + '</td>';
       mesas.forEach(function (a) {
         var gr = state.grades[a.id + '_' + s.id];
         h += '<td' + (gr && gr.status === 'calificada' ? ' class="ph-nota"' : '') + '>' + notaCeldaTxt(gr) + '</td>';
       });
       var cierre = state.cierres[s.id] != null ? state.cierres[s.id] : mesaAprobadaAnual(s.id);
+      if (cierre == null) { var pa = promFinal(s.id); cierre = pa != null && pa > 5.5 ? Math.max(1, Math.round(pa)) : null; }
       h += '<td class="ph-trim">' + (cierre != null ? '<b>' + cierre + '</b>' : '—') + '</td></tr>';
     });
     h += '</tbody></table><div class="ph-pie">Pend. = pendiente de entrega · No pres. = no presentado · — = sin calificar · '
