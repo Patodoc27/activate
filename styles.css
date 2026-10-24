@@ -506,7 +506,7 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
   border:1.5px solid var(--rojo);background:var(--rojo-suave);color:var(--rojo-osc);
   font-weight:800;font-size:.95rem;transition:background .15s}
 .btn-alerta:hover{background:#f3ddd6}
-.btn-alerta .ico{flex:none}
+.btn-alerta .ico{flex:none;width:26px;height:26px}
 .busca{width:100%;box-sizing:border-box;margin-bottom:14px;padding:11px 14px;
   border:1.5px solid var(--linea-fuerte);border-radius:12px;font-size:.95rem;background:#fff}
 .busca:focus{outline:none;border-color:var(--rojo);box-shadow:0 0 0 3px var(--rojo-suave)}
@@ -522,3 +522,12 @@ input.nota.invalida{border-color:var(--rojo) !important;background:#fdf0f0;
 .chip-al.rojo{background:#f7e2de;color:var(--rojo-osc);border:1px solid #e0b3ad}
 .chip-al.ambre{background:var(--ambre-suave);color:#8a5508;border:1px solid #e8c98f}
 .chip-al.gris{background:#efeae1;color:var(--gris);border:1px solid var(--linea-fuerte)}
+
+/* Alerta por trimestre: grupos 0 pendiente / 1 desaprobado */
+.alerta-grupo{margin-top:10px;padding-top:9px;border-top:1px dashed var(--linea)}
+.alerta-gtit{font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+.alerta-grupo.pend .alerta-gtit{color:#8a5508}
+.alerta-grupo.des .alerta-gtit{color:var(--rojo-osc)}
+.alerta-est{display:flex;align-items:baseline;gap:9px;padding:5px 0;font-size:.9rem}
+.alerta-est>span:first-child{font-weight:600}
+.alerta-cant{font-size:.76rem;color:var(--gris)}

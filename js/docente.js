@@ -251,7 +251,7 @@ window.Views.docente = function (view, ctx) {
     view.innerHTML = '<div class="seccion-titulo"><h2>Estadísticas por materia</h2>'
       + '<span class="nota">' + esc(ctx.course ? ctx.course.name : '') + ' · elegí el trimestre y tocá una materia</span></div>'
       + '<div class="pills" id="pills-t"></div>'
-      + '<button class="btn-alerta" id="btn-alerta">' + A.icon('alerta') + ' Alerta de estudiantes</button>'
+      + '<button class="btn-alerta" id="btn-alerta">' + A.icon('alertaAlumno') + ' Alerta de estudiantes</button>'
       + '<div id="panel-lista"><div class="vacio">Cargando estadísticas…</div></div>';
     view.querySelector('#btn-alerta').addEventListener('click', dibujarAlerta);
     var pills = view.querySelector('#pills-t');
@@ -310,172 +310,105 @@ window.Views.docente = function (view, ctx) {
     });
   }
 
-  /* Alerta de estudiantes (preceptor/dirección): quiénes adeudan en el curso —
-     desaprobados en cierre, ponderación baja, trabajos sin entregar */
+  /* Alerta de estudiantes (preceptor/dirección): solapas por trimestre,
+     por materia los estudiantes con pendiente (0) y desaprobado (1) */
   function dibujarAlerta() {
+    var termOrden = state.terms.slice().sort(function (a, b) { return a.id - b.id; });
+    if (!state.term && termOrden.length) state.term = termOrden[0].id;
     view.innerHTML = '<div class="seccion-titulo"><h2>Alerta de estudiantes</h2>'
-      + '<span class="nota">' + esc(ctx.course ? ctx.course.name : '') + ' · rendimiento bajo y trabajos adeudados</span></div>'
-      + '<div class="aviso info">' + A.icon('alerta') + '<div>Estudiantes con <b>materia desaprobada</b> (nota de cierre menor a 6), <b>ponderación baja</b> en un trimestre, o <b>trabajos sin entregar</b> — para avisar a las familias.</div></div>'
-      + '<input class="busca" id="alerta-busca" type="search" placeholder="Buscar estudiante…">'
+      + '<span class="nota">' + esc(ctx.course ? ctx.course.name : '') + '</span></div>'
+      + '<div class="pills" id="pills-al"></div>'
+      + '<div class="aviso info">' + A.icon('alertaAlumno') + '<div>Por materia: <b>0</b> = pendiente de entrega (todavía puede entregar) · <b>1</b> = desaprobado, ya no remonta esa nota.</div></div>'
       + '<div id="alerta-lista"><div class="vacio">Cargando…</div></div>'
       + '<button class="btn btn-ghost" id="alerta-volver" style="margin-top:14px">← Volver a materias</button>';
     view.querySelector('#alerta-volver').addEventListener('click', dibujarPanel);
+    var pills = view.querySelector('#pills-al');
+    termOrden.forEach(function (t) {
+      var b = el('button', 'pill' + (t.id === state.term ? ' activa' : ''));
+      b.textContent = t.name.replace(/\s*trimestre/i, ' T');
+      b.addEventListener('click', function () { state.term = t.id; dibujarAlerta(); });
+      pills.appendChild(b);
+    });
     var todos = [];
     var sidGrupo = {};
     state.subjects.forEach(function (s) {
       s.ids.forEach(function (id) { sidGrupo[id] = s; });
       todos = todos.concat(s.ids);
     });
-    var termOrden = state.terms.slice().sort(function (a, b) { return a.id - b.id; });
-    var hoy = new Date().toISOString().slice(0, 10);
-    function todasLasNotas(desde, acum) {
-      return sb.from('grades').select('activity_id,student_id,value,status,activities!inner(subject_id,term_id,kind,weight,due_date)')
-        .in('activities.subject_id', todos).order('activity_id').range(desde, desde + 999)
-        .then(function (r) {
-          var filas = r.data || [];
-          acum = acum.concat(filas);
-          return filas.length === 1000 ? todasLasNotas(desde + 1000, acum) : acum;
-        });
-    }
-    function todosLosCierres(desde, acum) {
-      return sb.from('term_grades').select('student_id,subject_id,term_id,value')
-        .in('subject_id', todos).order('student_id').range(desde, desde + 999)
-        .then(function (r) {
-          var filas = r.data || [];
-          acum = acum.concat(filas);
-          return filas.length === 1000 ? todosLosCierres(desde + 1000, acum) : acum;
-        });
-    }
-    Promise.all([
-      sb.from('enrollments').select('student_id,subject_id,students(id,first_name,last_name,course_id)')
-        .in('subject_id', todos).limit(5000),
-      sb.from('activities').select('id,subject_id,term_id,kind,weight,due_date')
-        .in('subject_id', todos).limit(5000),
-      todasLasNotas(0, []),
-      todosLosCierres(0, [])
-    ]).then(function (rs) {
-      var enr = rs[0].data || [], acts = rs[1].data || [], grads = rs[2] || [], cierres = rs[3] || [];
+    sb.from('activities').select('id,subject_id,title,term_id,kind')
+      .in('subject_id', todos).eq('term_id', state.term).limit(2000)
+    .then(function (ra) {
+      var acts = (ra.data || []).filter(function (a) { return a.kind !== 'mesa'; });
+      var actIds = acts.map(function (a) { return a.id; });
       var actMap = {};
       acts.forEach(function (a) { actMap[a.id] = a; });
-      var gradeMap = {};
-      grads.forEach(function (g) { gradeMap[g.activity_id + '_' + g.student_id] = g; });
-      // estudiantes del curso
-      var alumnos = {};
-      enr.forEach(function (e) {
-        var st = e.students;
-        if (!st || (CURSO && st.course_id !== CURSO)) return;
-        if (!alumnos[st.id]) alumnos[st.id] = { id: st.id, nom: st.last_name + ', ' + st.first_name };
-      });
-      // issue por estudiante+grupo: {des:[{term,nota}], pond:[{term,nota}], pend, nopres, venc}
-      var issues = {};
-      function issue(sid, g) {
-        var k = sid + '_' + g.nombre;
-        if (!issues[k]) issues[k] = { sid: sid, g: g.nombre, des: [], pond: [], pend: 0, nopres: 0, venc: 0 };
-        return issues[k];
+      if (!actIds.length) {
+        view.querySelector('#alerta-lista').innerHTML = '<div class="vacio">Todavía no hay actividades en este trimestre.</div>';
+        return;
       }
-      // cierres desaprobados
-      cierres.forEach(function (c) {
-        var g = sidGrupo[c.subject_id];
-        if (!g || !alumnos[c.student_id] || c.value == null || c.value >= 6) return;
-        var t = termOrden.filter(function (x) { return x.id === c.term_id; })[0];
-        var i = issue(c.student_id, g);
-        if (!i.des.filter(function (d) { return d.term === c.term_id; }).length)
-          i.des.push({ term: c.term_id, tnom: t ? t.name : '', nota: c.value });
-      });
-      // ponderación y pendientes por estudiante+grupo+term
-      var aluIds = Object.keys(alumnos).map(Number);
-      state.subjects.forEach(function (g) {
-        var actsG = acts.filter(function (a) { return g.ids.indexOf(a.subject_id) !== -1 && a.kind !== 'mesa'; });
-        aluIds.forEach(function (sid) {
-          var i = issue(sid, g);
-          termOrden.forEach(function (t) {
-            var actsT = actsG.filter(function (a) { return a.term_id === t.id; });
-            var suma = 0, pesos = 0, conDatos = false;
-            actsT.forEach(function (a) {
-              var gr = gradeMap[a.id + '_' + sid];
-              if (gr) {
-                var v = null;
-                if (gr.status === 'calificada' && gr.value != null) v = gr.value;
-                else if (gr.status === 'pendiente') v = 0;
-                else if (gr.status === 'no_presentado') v = 1;
-                if (v != null && a.weight) { conDatos = true; suma += v * a.weight; pesos += a.weight; }
-              } else if (a.due_date && a.due_date < hoy) {
-                i.venc++;
-              }
-            });
-            if (conDatos && pesos) {
-              var p = suma / pesos;
-              if (p < 6) i.pond.push({ term: t.id, tnom: t.name, nota: p });
-            }
+      function todasLasNotas(desde, acum) {
+        return sb.from('grades').select('activity_id,student_id,status')
+          .in('activity_id', actIds).order('activity_id').range(desde, desde + 999)
+          .then(function (r) {
+            var filas = r.data || [];
+            acum = acum.concat(filas);
+            return filas.length === 1000 ? todasLasNotas(desde + 1000, acum) : acum;
           });
+      }
+      Promise.all([
+        sb.from('enrollments').select('student_id,subject_id,students(id,first_name,last_name,course_id)')
+          .in('subject_id', todos).limit(5000),
+        todasLasNotas(0, [])
+      ]).then(function (rs) {
+        var enr = rs[0].data || [], grads = rs[1] || [];
+        var alumnos = {};
+        enr.forEach(function (e) {
+          var st = e.students;
+          if (!st || (CURSO && st.course_id !== CURSO)) return;
+          if (!alumnos[st.id]) alumnos[st.id] = { id: st.id, nom: st.last_name + ', ' + st.first_name };
         });
-      });
-      // estados pendiente / no presentado
-      grads.forEach(function (gr) {
-        var a = actMap[gr.activity_id];
-        if (!a || !alumnos[gr.student_id]) return;
-        var g = sidGrupo[a.subject_id];
-        if (!g || a.kind === 'mesa') return;
-        var i = issue(gr.student_id, g);
-        if (gr.status === 'pendiente') i.pend++;
-        else if (gr.status === 'no_presentado') i.nopres++;
-      });
-      // armar lista de estudiantes con alertas
-      var porAlu = {};
-      Object.keys(issues).forEach(function (k) {
-        var i = issues[k];
-        var n = i.des.length + i.pond.length + (i.pend || i.nopres || i.venc ? 1 : 0);
-        if (!n) return;
-        if (!porAlu[i.sid]) porAlu[i.sid] = { mats: [], peso: 0 };
-        porAlu[i.sid].mats.push(i);
-        porAlu[i.sid].peso += i.des.length * 3 + i.pond.length * 2 + Math.min(i.pend + i.nopres + i.venc, 3);
-      });
-      var listaIds = Object.keys(porAlu).map(Number).sort(function (a, b) {
-        return porAlu[b].peso - porAlu[a].peso || alumnos[a].nom.localeCompare(alumnos[b].nom);
-      });
-      function nomCorto(tid) {
-        var t = termOrden.filter(function (x) { return x.id === tid; })[0];
-        return t ? t.name.replace(/\s*trimestre/i, ' T') : '';
-      }
-      function chipDes(d) { return '<span class="chip-al rojo">' + esc(nomCorto(d.term)) + ' desaprobado · ' + d.nota + '</span>'; }
-      function chipPond(p) { return '<span class="chip-al ambre">' + esc(nomCorto(p.term)) + ' ponderación ' + p.nota.toFixed(1).replace('.', ',') + '</span>'; }
-      function chipTrab(i) {
-        var partes = [];
-        if (i.pend) partes.push(i.pend + ' pendiente' + (i.pend > 1 ? 's' : ''));
-        if (i.nopres) partes.push(i.nopres + ' sin presentar');
-        if (i.venc) partes.push(i.venc + ' vencida' + (i.venc > 1 ? 's' : '') + ' sin nota');
-        return '<span class="chip-al gris">' + esc(partes.join(' · ')) + '</span>';
-      }
-      function render(filtro) {
+        // por materia: pend -> [sid x n], des -> [sid x n]
+        var porMateria = {};
+        grads.forEach(function (g) {
+          if (g.status !== 'pendiente' && g.status !== 'no_presentado') return;
+          if (!alumnos[g.student_id]) return;
+          var a = actMap[g.activity_id];
+          if (!a) return;
+          var gpo = sidGrupo[a.subject_id];
+          if (!gpo) return;
+          var m = porMateria[gpo.nombre] = porMateria[gpo.nombre] || { pend: {}, des: {}, titulos: {} };
+          var bucket = g.status === 'pendiente' ? m.pend : m.des;
+          if (!bucket[g.student_id]) bucket[g.student_id] = { n: 0, acts: [] };
+          bucket[g.student_id].n++;
+          bucket[g.student_id].acts.push(a.title);
+        });
+        var nombres = Object.keys(porMateria).sort();
         var html = '';
-        var mostrados = 0;
-        listaIds.forEach(function (sid) {
-          var alu = alumnos[sid];
-          if (filtro && alu.nom.toLowerCase().indexOf(filtro) === -1) return;
-          mostrados++;
-          var chips = '';
-          porAlu[sid].mats.forEach(function (i) {
-            var cs = i.des.map(chipDes).join('') + i.pond.map(chipPond).join('')
-              + (i.pend || i.nopres || i.venc ? chipTrab(i) : '');
-            if (!cs) return;
-            chips += '<div class="alerta-mat"><span class="alerta-matnom">' + esc(i.g) + '</span>' + cs + '</div>';
-          });
-          html += '<div class="card alerta-card"><div class="alerta-nom">' + esc(alu.nom)
-            + '<span class="alerta-count">' + porAlu[sid].mats.length + ' materia' + (porAlu[sid].mats.length > 1 ? 's' : '') + '</span></div>'
-            + chips + '</div>';
+        nombres.forEach(function (nom) {
+          var m = porMateria[nom];
+          var nPend = Object.keys(m.pend).length, nDes = Object.keys(m.des).length;
+          html += '<div class="card alerta-card"><div class="panel-nom">' + esc(nom) + '</div>';
+          function filas(mapa, cls, etiqueta) {
+            var ids = Object.keys(mapa).map(Number)
+              .sort(function (a, b) { return mapa[b].n - mapa[a].n || alumnos[a].nom.localeCompare(alumnos[b].nom); });
+            if (!ids.length) return '';
+            var s = '<div class="alerta-grupo ' + cls + '"><div class="alerta-gtit">' + etiqueta + '</div>';
+            ids.forEach(function (sid) {
+              var e2 = mapa[sid];
+              s += '<div class="alerta-est"><span>' + esc(alumnos[sid].nom) + '</span>'
+                + '<span class="alerta-cant">' + e2.n + ' · ' + esc(e2.acts.join(' · ')) + '</span></div>';
+            });
+            return s + '</div>';
+          }
+          html += filas(m.pend, 'pend', '0 · pendiente de entrega — todavía puede entregar')
+              + filas(m.des, 'des', '1 · desaprobado — ya no remonta');
+          html += '</div>';
         });
         var lista = view.querySelector('#alerta-lista');
         if (!lista) return;
-        lista.innerHTML = (listaIds.length
-          ? '<div class="alerta-tot">' + listaIds.length + ' estudiante' + (listaIds.length > 1 ? 's' : '')
-            + ' con alertas en ' + esc(ctx.course ? ctx.course.name : '') + '</div>' + html
-          : '<div class="vacio">Ningún estudiante con alertas en este curso.</div>');
-        if (filtro && !mostrados)
-          lista.innerHTML = '<div class="vacio">Sin resultados para "' + esc(filtro) + '".</div>';
-      }
-      render('');
-      view.querySelector('#alerta-busca').addEventListener('input', function (e) {
-        render(e.target.value.trim().toLowerCase());
+        lista.innerHTML = nombres.length
+          ? '<div class="alerta-tot">' + nombres.length + ' materia' + (nombres.length > 1 ? 's' : '') + ' con estudiantes en alerta en este trimestre</div>' + html
+          : '<div class="vacio">Ningún estudiante con alertas en este trimestre.</div>';
       });
     });
   }
