@@ -8,6 +8,76 @@ window.Views.docente = function (view, ctx) {
                 filtro: '', autoTimer: null, calMes: null, verPlanilla: false,
                 resumen: true, cierres: {} };
 
+  /* Frases motivadoras: se muestran al azar al ingresar, el tiempo de lectura
+     se calcula por palabras y entra solo a la materia */
+  var FRASES = [
+    { t: 'Educar es sembrar en tierra fértil y confiar en que cada semilla tiene su tiempo.', a: '' },
+    { t: 'Todo el mundo es un genio. Pero si juzgas a un pez por su habilidad de trepar árboles, vivirá creyendo que es inútil.', a: 'atribuida a Albert Einstein' },
+    { t: 'La educación no es llenar un balde, sino encender un fuego.', a: 'William Butler Yeats' },
+    { t: 'Enseñar es tocar una vida para siempre.', a: '' },
+    { t: 'Un buen docente puede inspirar esperanza, encender la imaginación e infundir amor por el aprendizaje.', a: 'Brad Henry' },
+    { t: 'No hay alumno difícil: hay chicos que necesitan que alguien crea en ellos.', a: '' },
+    { t: 'La educación es el arma más poderosa que puedes usar para cambiar el mundo.', a: 'Nelson Mandela' },
+    { t: 'Dime y lo olvido, enséñame y lo recuerdo, involúcrame y lo aprendo.', a: 'Benjamin Franklin' },
+    { t: 'Cada clase es una oportunidad de cambiar el rumbo de un chico.', a: '' },
+    { t: 'El arte de enseñar es el arte de ayudar a descubrir.', a: 'Mark Van Doren' },
+    { t: 'Detrás de cada estudiante hay una historia que merece ser escuchada.', a: '' },
+    { t: 'Un docente deja huella en la eternidad: nunca sabe dónde termina su influencia.', a: 'Henry Adams' },
+    { t: 'Enseñar no es transferir conocimiento, es crear las condiciones para que el otro aprenda.', a: '' },
+    { t: 'Los chicos no recuerdan lo que enseñaste; recuerdan cómo los hiciste sentir.', a: '' },
+    { t: 'Quien se anima a enseñar no debe dejar de aprender.', a: 'John Cotton Dana' },
+    { t: 'La paciencia es la materia prima de todo docente.', a: '' },
+    { t: 'Enseñar es creer que cada estudiante puede más de lo que cree.', a: '' },
+    { t: 'El mejor docente es el que va sugiriendo el camino y deja que el alumno lo encuentre.', a: '' },
+    { t: 'La educación es lo que sobrevive cuando lo enseñado se ha olvidado.', a: 'B. F. Skinner' },
+    { t: 'Un aula es el lugar donde el futuro empieza a construirse.', a: '' },
+    { t: 'No enseñes lo que sabés: enseñá para que el otro pueda saber.', a: '' },
+    { t: 'El docente mediocre cuenta. El bueno explica. El excelente inspira.', a: 'William Arthur Ward' },
+    { t: 'Cada estudiante tiene algo que enseñarnos si estamos dispuestos a escuchar.', a: '' },
+    { t: 'La vocación docente se ve en las ganas de volver al aula cada día.', a: '' },
+    { t: 'Educar la mente sin educar el corazón no es educar en absoluto.', a: 'Aristóteles' },
+    { t: 'Lo que se enseña con pasión se aprende con ganas.', a: '' },
+    { t: 'Un buen docente convierte las preguntas difíciles en las mejores clases.', a: '' },
+    { t: 'La escuela es el lugar donde los sueños toman forma de proyecto.', a: '' },
+    { t: 'Nunca subestimes el poder de una palabra tuya en el momento justo.', a: '' },
+    { t: 'Enseñar es el arte de hacer posible lo que parece imposible.', a: '' },
+    { t: 'El buen docente siembra con la frente en alto y no se rinde con ninguna semilla.', a: '' },
+    { t: 'Aprendemos mejor lo que descubrimos por nosotros mismos.', a: '' },
+    { t: 'La curiosidad de un estudiante es el mejor plan de estudios.', a: '' },
+    { t: 'Hay chicos que solo necesitan que un adulto les diga: yo sé que podés.', a: '' },
+    { t: 'La enseñanza es una carrera de fondo: los frutos se ven años después.', a: '' },
+    { t: 'Cada nota que corregís es también una conversación con tu estudiante.', a: '' },
+    { t: 'El aula es más fuerte cuando el error se convierte en pregunta.', a: '' },
+    { t: 'No hay enseñanza pequeña: todo lo que sembrás puede crecer.', a: '' },
+    { t: 'La mejor herencia que deja un docente es la confianza en aprender.', a: '' },
+    { t: 'Enseñar con el corazón transforma más que enseñar solo con la razón.', a: '' },
+    { t: 'Un docente cambia el mundo estudiante por estudiante, clase por clase.', a: '' },
+    { t: 'El conocimiento se comparte, la pasión por aprender se contagia.', a: '' },
+    { t: 'Los buenos docentes construyen puentes donde otros ven abismos.', a: '' },
+    { t: 'Tu paciencia de hoy es la seguridad de ellos mañana.', a: '' },
+    { t: 'Enseñar es también aprender todos los días de tus estudiantes.', a: '' },
+    { t: 'El entusiasmo del docente es el primer material didáctico del aula.', a: '' },
+    { t: 'Quien enseña con verdad deja marca mucho más allá del aula.', a: '' },
+    { t: 'Cada clase es una nueva oportunidad de encender una chispa.', a: '' },
+    { t: 'Los chicos crecen con lo que les mostramos que creemos de ellos.', a: '' },
+    { t: 'Educar es acompañar el descubrimiento, no llenar un formulario.', a: '' }
+  ];
+
+  function mostrarFrase() {
+    var f = FRASES[Math.floor(Math.random() * FRASES.length)];
+    var palabras = f.t.split(/\s+/).length;
+    var espera = Math.min(Math.max(palabras / 180 * 60000, 3000), 9000);
+    view.innerHTML = '<div class="frase-fondo"><div class="frase-card">'
+      + '<div class="frase-comillas">”</div>'
+      + '<p class="frase-texto">' + esc(f.t) + '</p>'
+      + (f.a ? '<div class="frase-autor">— ' + esc(f.a) + '</div>' : '')
+      + '<div class="frase-skip">tocá para entrar</div>'
+      + '</div></div>';
+    var entrar = function () { state.resumen = false; cargarMateria(); };
+    var timer = setTimeout(entrar, espera);
+    view.querySelector('.frase-fondo').addEventListener('click', function () { clearTimeout(timer); entrar(); });
+  }
+
   function cargar() {
     var prom = CURSO
       ? sb.from('subject_courses').select('subject_id,is_primary').eq('course_id', CURSO)
@@ -52,16 +122,14 @@ window.Views.docente = function (view, ctx) {
       + '<span class="nota">' + esc(ctx.course ? ctx.course.name : '') + '</span></div>'
       + '<div id="resumen-cards"><div class="vacio">Cargando estadísticas…</div></div>'
       + '<button class="btn" id="ingresar" style="width:100%;margin-top:16px;padding:15px;font-size:1.02rem">Ingresar</button>';
-    view.querySelector('#ingresar').addEventListener('click', function () { state.resumen = false; cargarMateria(); });
+    view.querySelector('#ingresar').addEventListener('click', mostrarFrase);
     var todos = [];
     state.subjects.forEach(function (s) { todos = todos.concat(s.ids); });
-    sb.from('activities').select('id,subject_id,kind').in('subject_id', todos).then(function (ra) {
+    sb.from('activities').select('id,subject_id,kind,term_id,weight').in('subject_id', todos).then(function (ra) {
       var acts = ra.data || [];
-      var actIds = acts.map(function (a) { return a.id; });
       var porAct = {};
       acts.forEach(function (a) { porAct[a.id] = a.subject_id; });
       function todasLasNotas(desde, acum) {
-        if (!actIds.length) return Promise.resolve(acum);
         return sb.from('grades').select('activity_id,value,status,activities!inner(subject_id)')
           .in('activities.subject_id', todos).order('activity_id').range(desde, desde + 999)
           .then(function (r) {
@@ -70,45 +138,103 @@ window.Views.docente = function (view, ctx) {
             return filas.length === 1000 ? todasLasNotas(desde + 1000, acum) : acum;
           });
       }
+      function todosLosCierres(desde, acum) {
+        return sb.from('term_grades').select('student_id,subject_id,term_id,value')
+          .in('subject_id', todos).order('student_id').range(desde, desde + 999)
+          .then(function (r) {
+            var filas = r.data || [];
+            acum = acum.concat(filas);
+            return filas.length === 1000 ? todosLosCierres(desde + 1000, acum) : acum;
+          });
+      }
       Promise.all([
         sb.from('enrollments').select('student_id,subject_id').in('subject_id', todos).limit(5000),
-        todasLasNotas(0, [])
+        todasLasNotas(0, []),
+        todosLosCierres(0, [])
       ]).then(function (rs2) {
-        var enr = rs2[0].data || [], grads = rs2[1] || [];
+        var enr = rs2[0].data || [], grads = rs2[1] || [], cierres = rs2[2] || [];
+        var gradeMap = {};
+        grads.forEach(function (g) { gradeMap[g.activity_id + '_' + g.student_id] = g; });
+        var cierreMap = {};
+        cierres.forEach(function (c) { cierreMap[c.student_id + '_' + c.subject_id + '_' + c.term_id] = c.value; });
+        function pondResumen(sid, sids, termId) {
+          var suma = 0, pesos = 0, conDatos = false;
+          acts.forEach(function (a) {
+            if (sids.indexOf(a.subject_id) === -1 || a.term_id !== termId || a.kind === 'mesa') return;
+            if (a.weight == null || a.weight === 0) return;
+            var g = gradeMap[a.id + '_' + sid];
+            if (!g) return;
+            var v = null;
+            if (g.status === 'calificada' && g.value != null) v = g.value;
+            else if (g.status === 'pendiente') v = 0;
+            else if (g.status === 'no_presentado') v = 1;
+            if (v == null) return;
+            conDatos = true; suma += v * a.weight; pesos += a.weight;
+          });
+          if (!conDatos || !pesos) return null;
+          return suma / pesos;
+        }
+        function notaTrimResumen(sid, sids, termId) {
+          var sidPrim = sids[0];
+          var hab = cierreMap[sid + '_' + sidPrim + '_' + termId];
+          if (hab != null) return { nota: hab, sugerida: false };
+          var nt = pondResumen(sid, sids, termId);
+          return nt != null ? { nota: Math.max(1, Math.round(nt)), sugerida: true } : null;
+        }
+        function fmt(v) { return v != null ? v.toFixed(1).replace('.', ',') : '—'; }
         var html = '';
         state.subjects.forEach(function (s) {
           var actsS = acts.filter(function (a) { return s.ids.indexOf(a.subject_id) !== -1 && a.kind !== 'mesa'; });
           var alumnos = {};
           enr.forEach(function (e) { if (s.ids.indexOf(e.subject_id) !== -1) alumnos[e.student_id] = 1; });
-          var nAlu = Object.keys(alumnos).length;
-          var buckets = [0, 0, 0, 0, 0], nCal = 0, suma = 0;
-          grads.forEach(function (g) {
-            if (s.ids.indexOf(porAct[g.activity_id]) === -1) return;
-            if (g.status !== 'calificada' || g.value == null) return;
-            var v = Number(g.value);
-            nCal++; suma += v;
-            buckets[v <= 2 ? 0 : v <= 4 ? 1 : v <= 6 ? 2 : v <= 8 ? 3 : 4]++;
+          var aluIds = Object.keys(alumnos).map(Number);
+          var nAlu = aluIds.length;
+          var notasPorTrim = {};
+          aluIds.forEach(function (sid) {
+            state.terms.forEach(function (t) {
+              var r = notaTrimResumen(sid, s.ids, t.id);
+              if (r) (notasPorTrim[t.id] = notasPorTrim[t.id] || []).push(r.nota);
+            });
           });
-          var esperadas = actsS.length * nAlu;
-          var pct = esperadas ? Math.round(nCal / esperadas * 100) : 0;
-          var prom = nCal ? (suma / nCal).toFixed(1).replace('.', ',') : '—';
-          var maxB = Math.max.apply(null, buckets.concat([1]));
-          var etq = ['1-2', '3-4', '5-6', '7-8', '9-10'];
-          var bars = buckets.map(function (n, i) {
-            var color = i < 2 ? 'var(--rojo)' : (i === 2 ? 'var(--ambre)' : 'var(--azul)');
-            return '<div class="bar-col"><div class="bar-n">' + (n || '') + '</div>'
-              + '<div class="bar" style="height:' + Math.max(Math.round(n / maxB * 46), 2) + 'px;background:' + color + '"></div>'
-              + '<div class="bar-l">' + etq[i] + '</div></div>';
-          }).join('');
+          var promAlum = [];
+          aluIds.forEach(function (sid) {
+            var ns = [];
+            state.terms.forEach(function (t) {
+              var r = notaTrimResumen(sid, s.ids, t.id);
+              if (r) ns.push(r.nota);
+            });
+            if (ns.length) promAlum.push(ns.reduce(function (a, b) { return a + b; }, 0) / ns.length);
+          });
+          var promGral = promAlum.length ? promAlum.reduce(function (a, b) { return a + b; }, 0) / promAlum.length : null;
           html += '<div class="card card-resumen"><div class="res-titulo">' + esc(s.nombre) + '</div>'
             + '<div class="res-stats">'
             + '<div class="res-stat"><b>' + nAlu + '</b><span>estudiantes</span></div>'
             + '<div class="res-stat"><b>' + actsS.length + '</b><span>actividades</span></div>'
-            + '<div class="res-stat"><b>' + pct + '%</b><span>notas cargadas</span></div>'
-            + '<div class="res-stat"><b>' + prom + '</b><span>promedio</span></div></div>'
-            + (nCal ? '<div class="barras">' + bars + '</div><div class="res-pie">Distribución de notas cargadas (rojo < 5 · ambre 5-6 · azul 7+)</div>'
-              : '<div class="res-pie">Todavía no hay notas cargadas en esta materia.</div>')
-            + '</div>';
+            + '<div class="res-stat"><b>' + fmt(promGral) + '</b><span>promedio general</span></div></div>';
+          var termOrden = state.terms.slice().sort(function (a, b) { return a.id - b.id; });
+          termOrden.forEach(function (t, i) {
+            var actsT = actsS.filter(function (a) { return a.term_id === t.id; });
+            var notas = notasPorTrim[t.id] || [];
+            var apr = notas.filter(function (n) { return n >= 6; }).length;
+            var des = notas.length - apr;
+            var promT = notas.length ? notas.reduce(function (a, b) { return a + b; }, 0) / notas.length : null;
+            var pApr = notas.length ? Math.round(apr / notas.length * 100) : 0;
+            var torta = notas.length
+              ? '<div class="torta" style="background:conic-gradient(var(--azul) 0 ' + pApr + '%, var(--rojo) ' + pApr + '% 100%)"><div class="torta-centro">' + pApr + '%</div></div>'
+              : '<div class="torta torta-vacia"><div class="torta-centro">—</div></div>';
+            html += '<div class="res-trim"><div class="res-trim-t">' + esc(t.name) + '</div>'
+              + '<div class="res-trim-body"><div class="res-trim-stats">'
+              + '<span><b>' + nAlu + '</b> estudiantes</span>'
+              + '<span><b>' + actsT.length + '</b> actividades</span>'
+              + '<span><b>' + apr + '</b> aprobados</span>'
+              + '<span><b>' + des + '</b> desaprobados</span>'
+              + '<span>promedio <b>' + fmt(promT) + '</b></span>'
+              + '</div>' + torta + '</div>'
+              + (notas.length ? '<div class="res-pie">' + pApr + '% aprobados · ' + (100 - pApr) + '% desaprobados (sobre ' + notas.length + ' con nota de trimestre)</div>'
+                : '<div class="res-pie">Sin notas de trimestre todavía.</div>')
+              + '</div>';
+          });
+          html += '</div>';
         });
         var z = view.querySelector('#resumen-cards');
         if (z) z.innerHTML = html;
