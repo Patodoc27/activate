@@ -555,30 +555,7 @@ window.Views.docente = function (view, ctx) {
       h += '<h3 class="subt">Instancias de mesa</h3>';
       mesas.forEach(function (a) { h += filaAct(a, true); });
     }
-    if (acts.length && peso > 0) {
-      var conDato = 0, filasSug = '';
-      state.students.forEach(function (s) {
-        var nt = notaTrimestre(s.id);
-        var tg = state.termGrades[s.id + '_' + state.term];
-        var nota = tg ? tg.value : sug(nt);
-        if (nt != null) conDato++;
-        filasSug += '<div class="sug-fila"><span class="sug-nom">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</span>'
-          + '<span class="sug-pond">' + (nt != null ? pondTxt(nt) : '—') + '</span>'
-          + '<span class="sug-nota">' + (nota != null ? nota : '—') + (tg ? '<span class="sug-tag">habilitada</span>' : '') + '</span></div>';
-      });
-      if (conDato) {
-        h += '<div class="bloque-sugerida"><h3 class="subt">Nota sugerida del trimestre'
-          + ' <span class="nota">ponderación con peso ' + peso + '%' + (peso < 100 ? ' — proyecta con lo cargado' : '') + ' · redondea desde ,50</span></h3>'
-          + '<div class="sug-lista">' + filasSug + '</div>'
-          + (SOLO_LECTURA ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn btn-mini" id="aceptar-sug">Aceptar nota sugerida</button>'
-          + '<button class="btn btn-ghost btn-mini" id="hab-lista">Ajustar una por una</button></div>') + '</div>';
-      }
-    }
     z.innerHTML = h + '<div class="aviso" id="peso-msg" style="display:none;margin-top:8px"></div>';
-    var btnHab = z.querySelector('#hab-lista');
-    if (btnHab) btnHab.addEventListener('click', modalHabilitar);
-    var btnSug = z.querySelector('#aceptar-sug');
-    if (btnSug) btnSug.addEventListener('click', aceptarSugeridas);
     z.querySelectorAll('.act-btn').forEach(function (b) {
       b.addEventListener('click', function () {
         var a = state.activities.filter(function (x) { return x.id === Number(b.getAttribute('data-act')); })[0];
@@ -691,8 +668,8 @@ window.Views.docente = function (view, ctx) {
       var nt = notaTrimestre(s.id);
       var tg = state.termGrades[s.id + '_' + state.term];
       html += '<td class="num">' + (tg
-          ? '<b style="font-size:1.05rem">' + tg.value + '</b>' + (tg.computed != null && Math.abs(Number(tg.computed) - Number(tg.value)) > 0.001 ? '<br><span style="font-size:.66rem;color:var(--gris)">pond ' + pondTxt(Number(tg.computed)) + '</span>' : '')
-          : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + pondTxt(nt) + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">sugiere <b>' + sug(nt) + '</b></span>' : '<span style="color:var(--gris-claro)">—</span>'))
+          ? '<b style="font-size:1.05rem">' + tg.value + '</b>'
+          : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris);opacity:.7">' + sug(nt) + '</span>' : '<span style="color:var(--gris-claro)">—</span>'))
         + '</td>';
       var f = state.finals[s.id], fe = finalEfectiva(s.id), p = promFinal(s.id);
       html += '<td class="num">' + (SOLO_LECTURA
