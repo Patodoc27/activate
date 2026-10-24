@@ -110,8 +110,11 @@ window.Views.docente = function (view, ctx) {
       conDatos = true; suma += v * a.weight; pesos += a.weight;
     });
     if (!conDatos || !pesos) return null;
-    return Math.round(suma / pesos * 10) / 10;
+    return suma / pesos;
   }
+  // Ponderación con 2 decimales y nota sugerida (redondea hacia arriba desde ,50)
+  function pondTxt(nt) { return nt != null ? nt.toFixed(2).replace('.', ',') : ''; }
+  function sug(nt) { return nt != null ? Math.round(nt) : null; }
 
   function dibujar() {
     var acts = actsDelTerm();
@@ -398,8 +401,8 @@ window.Views.docente = function (view, ctx) {
       var nt = notaTrimestre(s.id);
       var tg = state.termGrades[s.id + '_' + state.term];
       html += '<td class="num">' + (tg
-          ? '<b style="font-size:1.05rem">' + tg.value + '</b>' + (tg.computed != null && Number(tg.computed).toFixed(1) !== String(tg.value) ? '<br><span style="font-size:.66rem;color:var(--gris)">calc ' + Number(tg.computed).toFixed(1) + '</span>' : '')
-          : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + nt + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">borrador</span>' : '<span style="color:var(--gris-claro)">—</span>'))
+          ? '<b style="font-size:1.05rem">' + tg.value + '</b>' + (tg.computed != null && Math.abs(Number(tg.computed) - Number(tg.value)) > 0.001 ? '<br><span style="font-size:.66rem;color:var(--gris)">pond ' + pondTxt(Number(tg.computed)) + '</span>' : '')
+          : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + pondTxt(nt) + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">sugiere <b>' + sug(nt) + '</b></span>' : '<span style="color:var(--gris-claro)">—</span>'))
         + '</td>';
       var f = state.finals[s.id];
       html += '<td class="num">' + (SOLO_LECTURA
@@ -662,8 +665,8 @@ window.Views.docente = function (view, ctx) {
           var td = tr.querySelectorAll('td.num');
           var cell = td[td.length - 2];
           if (cell) cell.innerHTML = tg
-            ? '<b style="font-size:1.05rem">' + tg.value + '</b>'
-            : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + nt + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">borrador</span>' : '<span style="color:var(--gris-claro)">—</span>');
+            ? '<b style="font-size:1.05rem">' + tg.value + '</b>' + (tg.computed != null && Math.abs(Number(tg.computed) - Number(tg.value)) > 0.001 ? '<br><span style="font-size:.66rem;color:var(--gris)">pond ' + pondTxt(Number(tg.computed)) + '</span>' : '')
+            : (nt != null ? '<span style="font-size:1.05rem;color:var(--gris)">' + pondTxt(nt) + '</span><br><span style="font-size:.66rem;color:var(--gris-claro)">sugiere <b>' + sug(nt) + '</b></span>' : '<span style="color:var(--gris-claro)">—</span>');
         });
       });
   }
@@ -756,15 +759,15 @@ window.Views.docente = function (view, ctx) {
     state.students.forEach(function (s) {
       var nt = notaTrimestre(s.id);
       var tg = state.termGrades[s.id + '_' + state.term];
-      var valor = tg ? tg.value : (nt != null ? nt : '');
+      var valor = tg ? tg.value : (sug(nt) != null ? sug(nt) : '');
       if (nt != null) conCalif++;
       filas += '<div class="fila-act"><div class="info"><div class="titulo">' + esc(s.last_name) + ', ' + esc(s.first_name) + '</div>'
-        + '<div class="meta">calculada: ' + (nt != null ? nt : 'sin datos') + '</div></div>'
+        + '<div class="meta">' + (nt != null ? 'ponderación ' + pondTxt(nt) + ' · sugerida <b>' + sug(nt) + '</b>' : 'sin datos') + '</div></div>'
         + '<input class="nota" style="width:70px;text-align:center;padding:8px;border:1.5px solid var(--linea);border-radius:8px;font-weight:700" type="number" min="0" max="10" step="1" inputmode="numeric" data-hab="' + s.id + '" value="' + valor + '"></div>';
     });
     fondo.innerHTML =
       '<div class="modal"><h3>Habilitar nota de trimestre</h3>'
-      + '<div class="aviso info">' + A.icon('libro') + '<div>Peso asignado: <b>' + peso + '%</b>' + (peso < 100 ? ' — la calculada proyecta con lo cargado' : '') + '. Revisá cada nota, ajustá si hace falta y confirmá.</div></div>'
+      + '<div class="aviso info">' + A.icon('libro') + '<div>Peso asignado: <b>' + peso + '%</b>' + (peso < 100 ? ' — la ponderación proyecta con lo cargado' : '') + '. La sugerida redondea hacia arriba desde ,50 (6,50 → 7). Revisá cada nota, ajustá si hace falta y confirmá.</div></div>'
       + '<div style="max-height:46vh;overflow-y:auto">' + filas + '</div>'
       + '<div class="acciones"><button class="btn-ghost btn" id="h-cancel">Cancelar</button>'
       + '<button class="btn" id="h-ok">Habilitar ' + conCalif + ' notas</button></div></div>';
@@ -778,7 +781,7 @@ window.Views.docente = function (view, ctx) {
         var sid = Number(inp.getAttribute('data-hab'));
         var nt = notaTrimestre(sid);
         ups.push({ student_id: sid, subject_id: idsMateria()[0], term_id: state.term,
-          computed: nt, value: Number(inp.value), updated_by: ctx.user.id });
+          computed: nt != null ? Math.round(nt * 100) / 100 : null, value: Number(inp.value), updated_by: ctx.user.id });
       });
       if (!ups.length) { fondo.remove(); return; }
       var btn = fondo.querySelector('#h-ok'); btn.disabled = true; btn.textContent = 'Habilitando…';
@@ -833,7 +836,7 @@ window.Views.docente = function (view, ctx) {
       });
       var tg = state.termGrades[s.id + '_' + state.term];
       var nt = tg ? tg.value : notaTrimestre(s.id);
-      fila.push(nt != null ? String(nt).replace('.', ',') : '');
+      fila.push(nt != null ? Number(nt).toFixed(2).replace('.', ',') : '');
       fila.push(state.finals[s.id] != null ? String(state.finals[s.id]).replace('.', ',') : '');
       filas.push(fila);
     });
@@ -867,7 +870,7 @@ window.Views.docente = function (view, ctx) {
       });
       var tg = state.termGrades[s.id + '_' + state.term];
       var nt = tg ? tg.value : notaTrimestre(s.id);
-      h += '<td class="ph-trim">' + (nt != null ? '<b>' + nt + '</b>' : '—') + '</td>';
+      h += '<td class="ph-trim">' + (nt != null ? '<b>' + Number(nt).toFixed(2).replace('.', ',') + '</b>' : '—') + '</td>';
       h += '<td class="ph-trim">' + (state.finals[s.id] != null ? '<b>' + state.finals[s.id] + '</b>' : '—') + '</td></tr>';
     });
     h += '</tbody></table><div class="ph-pie">Pend. = pendiente de entrega · No pres. = no presentado · — = sin calificar · '
